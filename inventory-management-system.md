@@ -1,15 +1,13 @@
-# Project: Inventory Management System
+
 
 ---
 
 ## 1. Project Overview
 
-<!-- Brief description of what the client wants and the approach you're taking. Two or three sentences — this sets context for John so he's oriented before you get into details. -->
 The client wants a inventory management system for there grocery store. The system is to handle/track inventory and discounts of both food and non-food products, the will also need to be alerts handling states of low stock, tracking on current inventory sales rates relative to previous sales, suggest discounts on products approaching end of shelf life. Along with exetensibility for reportin reporting. 
 ---
 
 ## 2. Assumptions & Open Questions
-<!-- Put this near the top, not buried at the bottom. These are the things you're waiting on John for or decisions you made in the absence of information. Format them clearly so John can respond to each one. -->
 
 ### Assumptions
 - [Starting from scratch]
@@ -25,39 +23,40 @@ The client wants a inventory management system for there grocery store. The syst
 
 ## 3. Epics
 
-<!-- List each epic with a one-sentence description of what it covers and why it matters to the business. This is your high-level view before diving into detail. -->
-
 | Epic ID | Name | Description | Business Value |
 |---------|------|-------------|----------------|
 | EPIC-01 | [Inventory Management] | [add/remove and mark product as discounted ] | [Allows accurate inventory tracking so the business always knows current stock levels and can make informed purchasing decisions] |
 | EPIC-02 | [Inventory Monitoring and Alerting] | [will alert the user based on the current stock of the product being low] | [This can allow the buisness to know when products are restock, meaning higher conversion of customers.] |
-| EPIC-03 | [Analytics] | [track the velocity of sale] | [this will allow the buisness to know how to handling and order future stock, based on current trends better serving the customor needs.] |
-| EPIC-04 | [Liquidation/Expiration Handling] | [suggest recomendations to put items on sale based on proximity to there expiration date] | [this will prevent the grocer from selling items that  have gone bad, and other similar disaterous outcomes] |
-| EPIC-05 | [Reporting] | [handling of the ] | [this will prevent the grocer from selling items that  have gone bad, and other similar disaterous outcomes] |
+| EPIC-03 | Analytics | Track the velocity of sale | Allows the business to know how to handle and order future stock based on current trends, better serving customer needs |
+| EPIC-04 | Liquidation/Expiration Handling | Suggest recommendations to put items on sale based on proximity to their expiration date | Prevents the grocer from selling items that have gone bad and other similar disastrous outcomes |
+| EPIC-05 | Reporting | Handling of the reporting infrastructure | Provides extensible foundation for future reporting capabilities |
 ---
 
 ## 4. User Stories by Epic
 
-<!-- For each epic, group the stories under it. The ID gives you something to reference in conversation — "let's talk about IM-03" is easier than "that one about the expiration thing." Priority could be simple: Must Have, Should Have, Nice to Have. That's the MoSCoW method. -->
-
-### Epic: [EPIC-01 Name]
+### Epic: EPIC-01 Inventory Management
 
 | ID | Role | Story | So That | Acceptance Criteria | Priority |
 |----|------|-------|---------|-------------------|----------|
-| [EPIC-01]-01 | As a [role] | I want to [action] | So that [benefit] | - [Criteria 1]<br>- [Criteria 2]<br>- [Criteria 3] | Must Have |
-| [EPIC-01]-02 | As a [role] | I want to [action] | So that [benefit] | - [Criteria 1]<br>- [Criteria 2] | Should Have |
+| EPIC-01-01 | As a user | I want to add new products to the inventory | So that we can keep track of store inventory | - Can add food items with name, category, quantity, price, and expiration date<br>- Can add non-food items with name, category, quantity, and price (no expiration date required)<br>- System distinguishes between food and non-food product types | Must Have |
+| EPIC-01-02 | As a user | I want to remove products from the inventory | So that discontinued or depleted items aren't in active inventory| - Product is archived rather than permanently deleted<br>-Removing a product with quantity > 0 triggers a confirmation prompt | Must Have |
+| EPIC-01-03 | As a user | I want to update the quantity of an existing product | So that inventory counts stay accurate as stock is received or sold | - Quantity can be increased (stocked) or decreased (sold, damage, etc.)<br>- Quantity cannot go below zero| Must Have |
+| EPIC-01-04 | As a user | I want to mark a product as on sale with a discount amount | So that reductions in price are applied and tracked without losing the original price | - Original price is preserved alongside the sale price<br>- Item can be a percentage or flat amount<br>- Item can be restored to the original price | Must Have |
 
 ### Epic: [EPIC-02 Name]
 
 | ID | Role | Story | So That | Acceptance Criteria | Priority |
 |----|------|-------|---------|-------------------|----------|
-| [EPIC-02]-01 | As a [role] | I want to [action] | So that [benefit] | - [Criteria 1]<br>- [Criteria 2] | Must Have |
+| EPIC-02-01 | As a user | I want to set a low-stock threshold when creating an item | So that I can define when I should be alerted before it runs out | - I can set a low-stock threshold during item creation<br>- The threshold must be a valid non-negative number<br>- The threshold is saved with the product | Should Have |
+| EPIC-02-02 | As a user | I want to be alerted when stock falls below the threshold | So that I can restock before running out | - Alert is generated when quantity falls below threshold<br>- Alert includes product name, current quantity, and threshold value<br>- Alerts can be acknowledged once acted on | Must Have |
 
-### Epic: [EPIC-03 Name]
+### Epic: EPIC-03 Analytics
 
 | ID | Role | Story | So That | Acceptance Criteria | Priority |
 |----|------|-------|---------|-------------------|----------|
-| [EPIC-03]-01 | As a [role] | I want to [action] | So that [benefit] | - [Criteria 1] | Nice to Have |
+| EPIC-03-01 | As a user | I want to see a product's sales velocity over the last 4 weeks | So that I can tell if it is selling faster or slower than before | - A chart displays weekly sales velocity for the past 4 weeks<br>- Velocity is shown as units sold per week<br>- Trend direction is visually clear (e.g., upward/downward slope) | Must Have |
+| EPIC-03-02 | As a user | I want to see the delta between the most recent week and the previous week | So that I can quickly quantify whether sales are accelerating or declining | - Delta (percentage change) is displayed<br>- Change is visually indicated (up/down) | Should Have |
+| EPIC-03-03 | As a user | I want to adjust the time period used to calculate sales velocity | So that I can analyze longer or shorter trends | - Time period is selectable (7, 30, 90 days)<br>- Chart updates when time period changes | Should Have |
 
 ---
 
@@ -183,8 +182,16 @@ The client wants a inventory management system for there grocery store. The syst
 
 | Term | Definition |
 |------|------------|
-| [Term] | [Definition] |
-| [Term] | [Definition] |
+| **Inventory** | The complete list of products currently in stock at the store |
+| **Food Item** | A product that has an expiration date and requires shelf life tracking |
+| **Non-Food Item** | A product without an expiration date (e.g., cleaning supplies, paper goods) |
+| **Low Stock** | When a product's quantity falls below the minimum threshold set for reordering |
+| **Sale Price** | A temporary reduced price applied to move inventory faster |
+| **Archived Product** | A product removed from active inventory tracking but retained in historical records |
+| **Velocity** | The rate at which a product sells over a specific time period |
+| **Expiration Date** | The date by which a food product should be sold or removed from shelves |
+| **Restock** | The process of adding inventory to an existing product's quantity |
+| **SKU** | Stock Keeping Unit - a unique identifier for each product type |
 
 ---
 
