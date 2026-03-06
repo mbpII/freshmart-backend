@@ -27,7 +27,20 @@ This document represents **Step One** of the Feature23 coding exercise: the requ
 - **Product schema** follows Excel structure: UPC, UnitCost, RetailPrice, IsOnSale, SalePrice, ExpirationDate, ReorderThreshold, ReorderQuantity, IsFood
 
 ### Client Meeting Notes
-Meeting with John Dupper confirmed FreshMart operates 4 stores with separate Excel tracking. Three distinct user roles identified. Product/Inventory/Transaction schema provided in sample files. Key pain points: inaccurate counts, difficulty tracking low stock, no automated expiration handling, inefficient multi-store management.
+
+**Meeting Date:** [To be scheduled]  
+**Attendees:** Matthew Parks (Consultant), John Dupper (Client, jdupper@feature23.com)  
+
+Meeting with John confirmed FreshMart operates 4 stores with separate Excel tracking. Three distinct user roles identified: Store Managers (oversee inventory & ensure stock levels), Stock Associates (receive shipments & update counts), and Corporate Staff (future - cross-store reporting). Product/Inventory/Transaction schema provided in sample Excel files. 
+
+**Key Pain Points Confirmed:**
+- Inaccurate inventory counts
+- Difficulty tracking low stock items
+- No automated expiration handling
+- Inefficient multi-store management
+- No visibility into inventory changes over time
+
+**Next Steps:** Review this requirements plan with John. Upon approval, begin Increment 1 development. Schedule follow-up meeting when first feature is ready for review.
 
 ---
 
@@ -90,7 +103,7 @@ The FreshMart requirements explicitly mention three user types, and the current 
 
 ## 5. Roadmap
 
-### Increment 1 — Core Inventory Foundation
+### Increment 1 — Core Inventory
 
 **What it delivers:**
 A functional inventory management system with multi-store support and role-based access. This increment establishes the core data model matching FreshMart's existing Excel structure, with full CRUD operations through a REST API accessible via a simple HTML/JavaScript frontend. The system supports 4 store locations with distinct user roles (Managers and Associates), tracks inventory per store using the Product/Inventory separation from the client's current spreadsheets, and logs all changes as transactions.
@@ -109,7 +122,7 @@ A functional inventory management system with multi-store support and role-based
 - Java 21+ and Maven/Gradle build system
 - Spring Boot 3.x with Spring Data JPA and Spring Security
 - PostgreSQL database (matching the Excel schema: Stores, Products, Inventory, Transactions, Suppliers)
-- Flyway for database schema versioning
+- Database schema versioning and migrations
 - BCrypt or similar for password hashing
 - JWT or session-based authentication
 - Basic HTML/CSS/JavaScript frontend with role-aware rendering
@@ -127,7 +140,7 @@ This increment replaces FreshMart's Excel-based process with a digital system th
   - `users` table: UserID, Username, PasswordHash, Role (MANAGER/ASSOCIATE/CORPORATE), AssignedStoreID (nullable for Corporate), Active
 - REST API uses JWT tokens with role claims
 - Frontend conditionally renders UI elements based on role from JWT
-- Flyway migrations V1-V6 establish schema matching Excel structure
+- Database migrations establish schema matching Excel structure
 - Per-store inventory queries use StoreID filter in all API endpoints
 - "Delete" operation sets Active=0 on Inventory record (archived) but presents as "removed" to user
 - Active inventory counts use `WHERE Active=1` filter in all queries
@@ -146,15 +159,15 @@ Enhanced inventory operations including discount management, low stock alerting,
 
 **Dependencies:**
 - Increment 1 completed and deployed
-- Flyway migration for alert system schema additions
+- Database schema additions for alert system
 - Frontend alert display components
 
 **Why it's second:**
 Building on the core inventory foundation, this increment adds operational intelligence that prevents stockouts and waste. Low stock alerts ensure the store never runs out of popular items, while expiration handling prevents selling expired goods. The discount functionality enables promotional pricing strategies. These features directly address the client's stated concerns about knowing when items are running low and handling products near expiration.
 
 **Technical Notes:**
-- Flyway migration V3 adds low_stock_threshold column
-- Flyway migration V4 adds alert/notification tables
+- Database schema adds low_stock_threshold column
+- Database schema adds alert/notification tables
 - Alert system queries database periodically or on quantity updates
 - Expiration warnings calculated based on configurable days-before-expiration threshold
 - Discount UI shows both original and sale prices
@@ -174,14 +187,14 @@ Sales velocity tracking and analytics capabilities that show how fast products a
 
 **Dependencies:**
 - Increment 1 deployed and operational long enough to accumulate meaningful SALE transaction history
-- Flyway migration for sales velocity tracking schema
+- Database schema additions for sales velocity tracking
 - Charting library for frontend (Chart.js or vanilla canvas)
 
 **Why it's third:**
 Analytics requires historical sales data that only becomes meaningful after Increment 2 is operational for some time. This increment transforms raw inventory data into actionable business intelligence—showing which products are trending up or down, enabling data-driven purchasing decisions, and providing automated discount suggestions to minimize waste. It completes the client's requirements for understanding sales velocity and making smart liquidation decisions.
 
 **Technical Notes:**
-- Flyway migration V5 adds sales_transaction_history table
+- Database schema adds sales_transaction_history table
 - REST endpoints for velocity calculations and chart data
 - Frontend charts rendered with Chart.js or custom canvas implementation
 - Discount suggestion algorithm based on days until expiration
@@ -194,7 +207,9 @@ Analytics requires historical sales data that only becomes meaningful after Incr
 ### Wireframe: Inventory Dashboard (Main List View)
 
 **Description:**
-The primary entry point for the inventory system. Displays a searchable, filterable table of all products with quick-glance information including current stock, sale status, and expiration warnings. McMaster-Carr inspired: dense data table with minimal chrome, clear headers, functional search/filter bar at top.
+Wireframe (conceptual design, not final implementation) for the primary entry point of the inventory system. Displays a searchable, filterable table of all products with quick-glance information including current stock, sale status, and expiration warnings. McMaster-Carr inspired: dense data table with minimal chrome, clear headers, functional search/filter bar at top.
+
+**Note:** These ASCII wireframes represent the UI concept and layout structure for client review. The actual implementation will be a functional HTML/CSS/JavaScript interface.
 
 **Layout Structure:**
 ```
@@ -238,7 +253,9 @@ The primary entry point for the inventory system. Displays a searchable, filtera
 ### Wireframe: Add/Edit Product Form
 
 **Description:**
-Modal or dedicated page for creating new products or editing existing ones. Clean form layout with conditional fields based on product type (food vs non-food). McMaster-Carr style: form fields aligned in a grid, clear labels, functional layout without decorative elements.
+Wireframe (conceptual design, not final implementation) for a modal or dedicated page for creating new products or editing existing ones. Clean form layout with conditional fields based on product type (food vs non-food). McMaster-Carr style: form fields aligned in a grid, clear labels, functional layout without decorative elements.
+
+**Note:** These ASCII wireframes represent the UI concept and layout structure. The actual implementation will be a functional HTML/CSS/JavaScript interface, but these diagrams serve to communicate the design intent before development begins.
 
 **Layout Structure:**
 ```
@@ -293,7 +310,9 @@ Modal or dedicated page for creating new products or editing existing ones. Clea
 ### Wireframe: Product Detail Page
 
 **Description:**
-Detailed view of a single product showing all information, current stock status, sales history graph, and active alerts. McMaster-Carr inspired: information-dense layout with data organized in clear sections, functional graphs without decorative elements.
+Wireframe (conceptual design, not final implementation) for a detailed view of a single product showing all information, current stock status, sales history graph, and active alerts. McMaster-Carr inspired: information-dense layout with data organized in clear sections, functional graphs without decorative elements.
+
+**Note:** These ASCII wireframes represent the UI concept and layout structure for client review. The actual implementation will be a functional HTML/CSS/JavaScript interface.
 
 **Layout Structure:**
 ```
@@ -370,7 +389,9 @@ Detailed view of a single product showing all information, current stock status,
 ### Wireframe: Alerts Panel
 
 **Description:**
-Centralized view of all system alerts requiring user attention. Organized by severity/urgency with clear action items. McMaster-Carr style: tabular data presentation with action buttons, minimal visual noise.
+Wireframe (conceptual design, not final implementation) for a centralized view of all system alerts requiring user attention. Organized by severity/urgency with clear action items. McMaster-Carr style: tabular data presentation with action buttons, minimal visual noise.
+
+**Note:** These ASCII wireframes represent the UI concept and layout structure for client review. The actual implementation will be a functional HTML/CSS/JavaScript interface.
 
 **Layout Structure:**
 ```
