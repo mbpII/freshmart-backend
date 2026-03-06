@@ -297,7 +297,7 @@ This increment comes after enough sales history exists to make the analytics use
 |---|---------|--------------|----------------|-------|
 | 1 | **Full Transaction Audit Trail** | The Excel pain points mention difficulty tracking inventory changes over time | All RECEIVE, SALE, and ADJUSTMENT transactions capture UserID, timestamp, and notes | This creates complete accountability so the who and when is documented for every inventory change|
 | 2 | **Role-Based Access Control** (EPIC-06) | Exercise prompt mentions "store managers" and "associates" but doesn't explicitly ask for authentication | Login system with role based authentication and authorization | Separation of duties prevents unauthorized pricing changes by Associates|
-| 3 | **Multi-Store Architecture ** | Client description identifies managing inventory across locations as a key pain point | StoreID scoping on all inventory queries, per-store transaction logging | Solves the actual pain point (inefficiency) first rather than building single-store MVP that misses the mark |Client description identifies managing inventory across locations pain point|
+| 3 | **Multi-Store Architecture** | Client description identifies managing inventory across locations as a key pain point | StoreID scoping on all inventory queries, per-store transaction logging | Solves the actual pain point (inefficiency) first rather than building single-store MVP that misses the mark |Client description identifies managing inventory across locations pain point|
 ---
 
 ### Deferred for Future Phases
