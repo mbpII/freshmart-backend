@@ -204,12 +204,25 @@ Analytics requires historical sales data that only becomes meaningful after Incr
 
 ## 6. Wireframes
 
+### Design Pattern: Functional Minimalism (McMaster-Carr Style)
+
+All wireframes follow a **functional minimalism** design philosophy inspired by industrial supply catalogs like McMaster-Carr:
+
+- **Dense information display**: Maximize data visibility, minimize decorative elements
+- **Clear visual hierarchy**: Headers, labels, and data organized in strict grids
+- **Functional over beautiful**: Every element serves a purpose
+- **Tabular presentation**: Data tables preferred for complex information
+- **Minimal chrome**: No unnecessary borders, shadows, or gradients
+- **Action-oriented**: Buttons and controls clearly labeled and contextually placed
+
+**Note:** These ASCII wireframes represent the UI concept and layout structure for client review. The actual implementation will be a functional HTML/CSS/JavaScript interface following this design pattern.
+
+---
+
 ### Wireframe: Inventory Dashboard (Main List View)
 
 **Description:**
-Wireframe (conceptual design, not final implementation) for the primary entry point of the inventory system. Displays a searchable, filterable table of all products with quick-glance information including current stock, sale status, and expiration warnings. McMaster-Carr inspired: dense data table with minimal chrome, clear headers, functional search/filter bar at top.
-
-**Note:** These ASCII wireframes represent the UI concept and layout structure for client review. The actual implementation will be a functional HTML/CSS/JavaScript interface.
+Wireframe for the primary entry point of the inventory system. Displays a searchable, filterable table of all products with quick-glance information including current stock, sale status, and expiration warnings.
 
 **Layout Structure:**
 ```
@@ -253,66 +266,7 @@ Wireframe (conceptual design, not final implementation) for the primary entry po
 ### Wireframe: Add/Edit Product Form
 
 **Description:**
-Wireframe (conceptual design, not final implementation) for a modal or dedicated page for creating new products or editing existing ones. Clean form layout with conditional fields based on product type (food vs non-food). McMaster-Carr style: form fields aligned in a grid, clear labels, functional layout without decorative elements.
-
-**Note:** These ASCII wireframes represent the UI concept and layout structure. The actual implementation will be a functional HTML/CSS/JavaScript interface, but these diagrams serve to communicate the design intent before development begins.
-
-**Layout Structure:**
-```
-+--------------------------------------------------+
-|  ADD NEW PRODUCT                         [X Close]|
-+--------------------------------------------------+
-|                                                  |
-|  Product Type:  ( ) Food    ( ) Non-Food        |
-|                                                  |
-|  Product Name: [____________________________]   |
-|                                                  |
-|  Category:     [Dairy ▼______________________]   |
-|                                                  |
-|  UPC:          [____________________________]    |
-|                                                  |
-|  Initial Qty:  [____________]  Unit: [each ▼]   |
-|                                                  |
-|  Regular Price: $[__________]                    |
-|                                                  |
-|  [Food items only]:                             |
-|  Expiration Date: [____/____/________]         |
-|                                                  |
-|  Low Stock Threshold: [________]                 |
-|  (Alert when quantity falls below this number)  |
-|                                                  |
-|  [ ] Mark as on sale now                        |
-|  Sale Price: $[__________]   or  Discount: [__]%|
-|                                                  |
-|          [Cancel]           [Save Product]      |
-|                                                  |
-+--------------------------------------------------+
-```
-
-**Supports Stories:**
-- EPIC-01-01: Add new products with type distinction
-- EPIC-01-03: Edit product details and quantities
-- EPIC-01-04: Configure sale pricing
-- EPIC-02-01: Set low stock thresholds
-- EPIC-04-01: Enter expiration dates for food items
-
-**Key Elements:**
-- **Product type toggle**: Radio buttons for Food/Non-Food selection (sets IsFood field)
-- **Conditional fields**: Expiration date only shows for Food type
-- **UPC field**: Universal Product Code for barcode scanning
-- **Low stock threshold**: Number input with helpful text
-- **Sale configuration**: Toggle to enable sale, with price or percentage options
-- **Form validation**: Inline validation for required fields
-- **Cancel/Save buttons**: Standard form actions
-
----
-
-### Wireframe: Product Detail Page
-
-**Description:**
-Wireframe (conceptual design, not final implementation) for a detailed view of a single product showing all information, current stock status, sales history graph, and active alerts. McMaster-Carr inspired: information-dense layout with data organized in clear sections, functional graphs without decorative elements.
-
-**Note:** These ASCII wireframes represent the UI concept and layout structure for client review. The actual implementation will be a functional HTML/CSS/JavaScript interface.
+Wireframe for a modal or dedicated page for creating new products or editing existing ones. Clean form layout with conditional fields based on product type (food vs non-food).
 
 **Layout Structure:**
 ```
@@ -389,9 +343,7 @@ Wireframe (conceptual design, not final implementation) for a detailed view of a
 ### Wireframe: Alerts Panel
 
 **Description:**
-Wireframe (conceptual design, not final implementation) for a centralized view of all system alerts requiring user attention. Organized by severity/urgency with clear action items. McMaster-Carr style: tabular data presentation with action buttons, minimal visual noise.
-
-**Note:** These ASCII wireframes represent the UI concept and layout structure for client review. The actual implementation will be a functional HTML/CSS/JavaScript interface.
+Wireframe for a centralized view of all system alerts requiring user attention. Organized by severity/urgency with clear action items.
 
 **Layout Structure:**
 ```
