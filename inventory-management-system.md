@@ -49,7 +49,7 @@ Meeting with John confirmed FreshMart operates 4 stores with separate Excel trac
 | Epic ID | Name | Description | Business Value |
 |---------|------|-------------|----------------|
 | EPIC-01 | Inventory Management | Add/remove and mark product as discounted | Allows accurate inventory tracking so the business always knows current stock levels and can make informed purchasing decisions |
-| EPIC-02 | Inventory Monitoring and Alerting | Will alert the user based on the current stock of the product being low | This can allow the **business** to know when products are restock, meaning higher conversion of customers. |
+| EPIC-02 | Inventory Monitoring and Alerting | Will alert the user based on the current stock of the product being low | This can allow the **business** to know when products are restocked, meaning higher conversion of customers. |
 | EPIC-03 | Analytics | Track the velocity of sale | Allows the business to know how to handle and order future stock based on current trends, better serving customer needs |
 | EPIC-04 | Liquidation/Expiration Handling | Suggest recommendations to put items on sale based on proximity to their expiration date | Prevents the grocer from selling items that have gone bad and other similar disastrous outcomes |
 | EPIC-05 | Reporting | Handling of the reporting infrastructure | Supports future reporting capabilities as the system grows |
@@ -126,7 +126,7 @@ A functional inventory management system with multi-store support and role-based
 - Web-based frontend with role-aware rendering
 
 **Why it's first:**
-This increment gets FreshMart out of Excel and into a system that tracks inventory more reliably starting with one, which can be repeated across all 4 stores. It covers the core day-to-day work first: managing products, inventory, and making sure Managers and Associate have adequate date.
+This increment gets FreshMart out of Excel and into a system that tracks inventory more reliably starting with one, which can be repeated across all 4 stores. It covers the core day-to-day work first: managing products, inventory, and making sure Managers and Associate have adequate data.
 
 **Technical Notes:**
 - Database schema is based on the client's existing Excel structure with additions for authentication and audit tracking:
@@ -297,7 +297,7 @@ This increment comes after enough sales history exists to make the analytics use
 |---|---------|--------------|----------------|-------|
 | 1 | **Full Transaction Audit Trail** | The Excel pain points mention difficulty tracking inventory changes over time | All RECEIVE, SALE, and ADJUSTMENT transactions capture UserID, timestamp, and notes | This creates complete accountability so the who and when is documented for every inventory change|
 | 2 | **Role-Based Access Control** (EPIC-06) | Exercise prompt mentions "store managers" and "associates" but doesn't explicitly ask for authentication | Login system with role based authentication and authorization | Separation of duties prevents unauthorized pricing changes by Associates|
-| 3 | **Multi-Store Architecture ** | | StoreID scoping on all inventory queries, per-store transaction logging | Solves the actual pain point (inefficiency) first rather than building single-store MVP that misses the mark |
+| 3 | **Multi-Store Architecture ** | | StoreID scoping on all inventory queries, per-store transaction logging | Solves the actual pain point (inefficiency) first rather than building single-store MVP that misses the mark |Client description identifies managing inventory across locations pain point|
 ---
 
 ### Deferred for Future Phases
