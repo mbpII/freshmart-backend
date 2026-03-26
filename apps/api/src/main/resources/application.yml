@@ -57,6 +57,28 @@ spring:
 spring:
   config:
     activate:
+      on-profile: docker
+  
+  datasource:
+    url: jdbc:postgresql://postgres:5432/freshmart
+    username: freshmart
+    password: freshmart
+  
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+---
+spring:
+  config:
+    activate:
       on-profile: prod
   
   jpa:
