@@ -1,0 +1,90 @@
+spring:
+  application:
+    name: freshmart-inventory-api
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/freshmart
+    username: freshmart
+    password: freshmart
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+  
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    com.freshmart: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  
+  datasource:
+    url: jdbc:postgresql://postgres:5432/freshmart
+    username: freshmart
+    password: freshmart
+  
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+  jpa:
+    show-sql: false
+  
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/freshmart}
+    username: ${DATABASE_USERNAME:freshmart}
+    password: ${DATABASE_PASSWORD:freshmart}
