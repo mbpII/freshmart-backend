@@ -1,69 +1,49 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { productsApi } from '@/api/client';
-import type { FilterParams, ProductInput, ProductUpdate } from '@/types';
-import { DEFAULT_STORE_ID } from '@/lib/constants';
+import { productApi } from '../api/products';
+import type { Product } from '../types/product';
 
-export function useProducts(filters?: FilterParams, storeId: number = DEFAULT_STORE_ID) {
-  return useQuery({
-    queryKey: ['products', storeId, filters],
-    queryFn: async () => {
-      const response = await productsApi.getAll(storeId, filters);
-      return response.data;
-    },
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Auto-refresh every minute
+const STORE_ID = 101; // MVP: hardcoded
+
+// Queries
+export const useProductsQuery = () =>
+  useQuery({
+    queryKey: ['products'],
+    queryFn: () => productApi.getAll(STORE_ID),
+    staleTime: 30000,
   });
-}
 
-export function useProduct(productId: number, storeId: number = DEFAULT_STORE_ID) {
-  return useQuery({
-    queryKey: ['product', productId, storeId],
-    queryFn: async () => {
-      const response = await productsApi.getById(productId, storeId);
-      return response.data;
-    },
-    enabled: !!productId,
+export const useProductQuery = (id: number) =>
+  useQuery({
+    queryKey: ['product', id],
+    queryFn: () => productApi.getById(id, STORE_ID),
+    enabled: !!id,
   });
-}
 
-export function useCreateProduct() {
-  const queryClient = useQueryClient();
-  
+// Mutations
+export const useCreateProduct = () => {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: ProductInput) => {
-      const response = await productsApi.create(data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
+    mutationFn: productApi.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
   });
-}
+};
 
-export function useUpdateProduct() {
-  const queryClient = useQueryClient();
-  
+export const useUpdateProduct = () => {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ productId, data }: { productId: number; data: ProductUpdate }) => {
-      const response = await productsApi.update(productId, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product', variables.productId] });
+    mutationFn: ({ id, data }: { id: number; data: Partial<Product> }) => 
+      productApi.update(id, data),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['products'] });
+      qc.invalidateQueries({ queryKey: ['product', id] });
     },
   });
-}
+};
 
-export function useDeleteProduct() {
-  const queryClient = useQueryClient();
-  
+export const useDeleteProduct = () => {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (productId: number) => {
-      await productsApi.delete(productId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
+    mutationFn: productApi.delete,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
   });
-}
+};

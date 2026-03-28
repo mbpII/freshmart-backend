@@ -1,146 +1,61 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  /* Colors - Functional minimalism */
-  --color-primary: #1a1a1a;
-  --color-secondary: #4a4a4a;
-  --color-accent: #2563eb;
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-danger: #dc2626;
-  
-  /* Background colors */
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f5f5f5;
-  --color-bg-hover: #e5e5e5;
-  
-  /* Border colors */
-  --color-border: #d4d4d4;
-  --color-border-dark: #a3a3a3;
-  
-  /* Alert colors */
-  --color-alert-low-bg: #fef9c3;
-  --color-alert-low-text: #854d0e;
-  --color-alert-low-border: #fde047;
-  --color-alert-exp-bg: #fee2e2;
-  --color-alert-exp-text: #991b1b;
-  --color-alert-exp-border: #fca5a5;
-  --color-alert-sale-bg: #dcfce7;
-  --color-alert-sale-text: #166534;
-  --color-alert-sale-border: #86efac;
-  
-  /* Fonts */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  
-  /* Spacing - Dense UI */
-  --spacing-unit: 0.25rem;
-}
-
-@layer base {
-  body {
-    @apply bg-bg-primary text-primary font-sans antialiased;
-  }
-  
-  /* Dense table styling */
-  .data-table {
-    @apply w-full border-collapse text-sm border-separate border-spacing-0;
-  }
-  
-  .data-table th {
-    @apply bg-bg-secondary border border-border px-2 py-1.5 text-left font-semibold text-xs uppercase tracking-wide;
-  }
-  
-  .data-table td {
-    @apply border border-border px-2 py-1.5;
-  }
-  
-  .data-table tr:hover td {
-    @apply bg-bg-hover;
-  }
-  
-  /* Form elements */
-  input, select, textarea {
-    @apply border border-border px-2 py-1 text-sm focus:outline-none focus:border-border-dark;
-  }
-  
-  /* Alert badges */
-  .badge {
-    @apply inline-flex items-center text-xs font-semibold px-2 py-0.5 border;
-  }
-  
-  .badge-low {
-    @apply badge bg-alert-low-bg text-alert-low-text border-alert-low-border;
-  }
-  
-  .badge-exp {
-    @apply badge bg-alert-exp-bg text-alert-exp-text border-alert-exp-border;
-  }
-  
-  .badge-sale {
-    @apply badge bg-alert-sale-bg text-alert-sale-text border-alert-sale-border;
-  }
-  
-  /* Buttons */
-  .btn {
-    @apply inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium transition-colors;
-  }
-  
+@layer components {
   .btn-primary {
-    @apply btn bg-primary text-white border border-primary hover:bg-secondary;
+    @apply bg-gray-800 text-white px-3 py-1.5 text-sm font-medium hover:bg-gray-700;
   }
   
   .btn-secondary {
-    @apply btn bg-white text-primary border border-border hover:bg-bg-secondary;
+    @apply bg-white text-gray-800 px-3 py-1.5 text-sm font-medium border border-gray-300 hover:bg-gray-50;
   }
   
   .btn-danger {
-    @apply btn bg-white text-danger border border-danger hover:bg-alert-exp-bg;
+    @apply bg-white text-red-600 px-3 py-1.5 text-sm font-medium border border-red-400 hover:bg-red-50;
   }
   
-  .btn-sm {
-    @apply px-2 py-1 text-xs;
-  }
-}
-
-@layer utilities {
-  /* Container utilities */
-  .container-tight {
-    @apply max-w-6xl mx-auto px-4;
-  }
-  
-  /* Text utilities */
-  .text-label {
-    @apply text-xs font-semibold uppercase tracking-wide text-secondary;
-  }
-  
-  /* Form section */
-  .form-section {
-    @apply mb-6;
-  }
-  
-  .form-label {
-    @apply block text-label mb-1;
-  }
-  
-  .form-input {
-    @apply w-full border border-border px-3 py-2 text-sm focus:outline-none focus:border-border-dark;
-  }
-  
-  .form-select {
-    @apply form-input appearance-none bg-white;
-  }
-  
-  /* Card styling */
   .card {
-    @apply bg-white border border-border;
+    @apply bg-white border border-gray-200;
   }
   
   .card-header {
-    @apply bg-bg-secondary border-b border-border px-4 py-3;
+    @apply bg-gray-50 border-b border-gray-200 px-4 py-3;
   }
   
   .card-body {
     @apply p-4;
+  }
+  
+  .badge {
+    @apply inline-flex text-xs font-semibold px-2 py-0.5 border;
+  }
+  
+  .badge-low {
+    @apply badge bg-yellow-100 text-yellow-800 border-yellow-300;
+  }
+  
+  .badge-exp {
+    @apply badge bg-red-100 text-red-800 border-red-300;
+  }
+  
+  .badge-sale {
+    @apply badge bg-green-100 text-green-800 border-green-300;
+  }
+  
+  .data-table {
+    @apply w-full border-collapse;
+  }
+  
+  .data-table th {
+    @apply bg-gray-100 border border-gray-300 px-2 py-1.5 text-left text-xs font-semibold uppercase;
+  }
+  
+  .data-table td {
+    @apply border border-gray-300 px-2 py-1.5 text-sm;
+  }
+  
+  .data-table tr:hover td {
+    @apply bg-gray-50;
   }
 }
