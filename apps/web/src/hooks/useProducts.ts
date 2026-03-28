@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productApi } from '../api/products';
-import type { Product } from '../types/product';
+import type { CreateProductInput, UpdateProductInput } from '../types/product';
 
 const STORE_ID = 101; // MVP: hardcoded
 
@@ -23,7 +23,7 @@ export const useProductQuery = (id: number) =>
 export const useCreateProduct = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: productApi.create,
+    mutationFn: (data: CreateProductInput) => productApi.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
   });
 };
@@ -31,7 +31,7 @@ export const useCreateProduct = () => {
 export const useUpdateProduct = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Product> }) => 
+    mutationFn: ({ id, data }: { id: number; data: UpdateProductInput }) => 
       productApi.update(id, data),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['products'] });

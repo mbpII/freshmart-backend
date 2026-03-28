@@ -1,30 +1,24 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEventHandler } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MarkOnSale, type SaleInput } from "../../components/MarkOnSale";
+import { MarkOnSale } from "../../components/MarkOnSale";
 import productFormConfig from "../../data/product-form.json";
 import { useCreateProduct } from "../../hooks/useProducts";
-import type { Product, Unit } from "../../types/product";
-
-type ProductType = "food" | "non-food";
-
-type ProductFormData = Pick<
-  Product,
-  "productName" | "category" | "upc" | "unit" | "quantityOnHand" | "retailPrice"
-> & {
-  productType: ProductType;
-  reorderThreshold: number;
-  expirationDate: string;
-};
-
-type ProductFormConfig = {
-  categories: string[];
-  units: Unit[];
-  defaults: ProductFormData;
-};
+import {
+  buildCreateProductInput,
+  validateProductForm,
+} from "../../lib/productForm";
+import type {
+  ProductFormConfig,
+  ProductFormData,
+  ProductFormErrors,
+  ProductType,
+  SaleInput,
+} from "../../types/product";
 
 const { categories, units, defaults } = productFormConfig as ProductFormConfig;
 
 function isManager() {
+  //TODO: add user roles and implement this
   return false;
 }
 
@@ -32,134 +26,54 @@ export default function NewProduct() {
   const navigate = useNavigate();
   const createProduct = useCreateProduct();
   const canManageSales = isManager();
+
   const [formData, setFormData] = useState<ProductFormData>(() => ({
     ...defaults,
   }));
   const [sale, setSale] = useState<SaleInput>({ mode: "none" });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<ProductFormErrors>({});
 
-  const handleChange = <K extends keyof ProductFormData>(
-    field: K,
-    value: ProductFormData[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-  };
-
-  const clearSaleError = () => {
-    if (!errors.sale) {
-      return;
-    }
-
+  const clearError = (field: keyof ProductFormErrors) => {
     setErrors((prev) => {
+      if (!prev[field]) {
+        return prev;
+      }
+
       const next = { ...prev };
-      delete next.sale;
+      delete next[field];
       return next;
     });
   };
 
-  const validate = () => {
-    const nextErrors: Record<string, string> = {};
-
-    if (!formData.productName.trim()) {
-      nextErrors.productName = "Product name is required";
-    }
-
-    if (!formData.category) {
-      nextErrors.category = "Category is required";
-    }
-
-    if (!formData.upc.trim()) {
-      nextErrors.upc = "UPC is required";
-    }
-
-    if (formData.quantityOnHand < 0) {
-      nextErrors.quantityOnHand = "Initial quantity must be 0 or greater";
-    }
-
-    if (formData.reorderThreshold < 0) {
-      nextErrors.reorderThreshold = "Low stock threshold must be 0 or greater";
-    }
-
-    if (formData.retailPrice <= 0) {
-      nextErrors.retailPrice = "Retail price must be greater than 0";
-    }
-
-    if (canManageSales && sale.mode === "price") {
-      const salePrice = Number.parseFloat(sale.value);
-
-      if (
-        !Number.isFinite(salePrice) ||
-        salePrice <= 0 ||
-        salePrice >= formData.retailPrice
-      ) {
-        nextErrors.sale =
-          "Sale price must be greater than 0 and lower than retail price";
-      }
-    }
-
-    if (canManageSales && sale.mode === "discount") {
-      const discount = Number.parseFloat(sale.value);
-
-      if (!Number.isFinite(discount) || discount <= 0 || discount >= 100) {
-        nextErrors.sale = "Discount must be greater than 0 and less than 100";
-      }
-    }
-
-    if (formData.productType === "food" && !formData.expirationDate) {
-      nextErrors.expirationDate =
-        "Expiration date is required for food products";
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+  const updateField = <K extends keyof ProductFormData>(
+    field: K,
+    value: ProductFormData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    clearError(field);
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSaleChange = (nextSale: SaleInput) => {
+    setSale(nextSale);
+    clearError("sale");
+  };
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
 
-    if (!validate()) {
+    const nextErrors = validateProductForm(formData, sale, canManageSales);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
 
-    const discount =
-      canManageSales && sale.mode === "discount"
-        ? Number.parseFloat(sale.value) / 100
-        : undefined;
-    const salePrice =
-      canManageSales && sale.mode === "price"
-        ? Number.parseFloat(sale.value)
-        : canManageSales && sale.mode === "discount" && discount !== undefined
-          ? Number((formData.retailPrice * (1 - discount)).toFixed(2))
-          : undefined;
-
-    const productData: Partial<Product> = {
-      productName: formData.productName.trim(),
-      category: formData.category,
-      upc: formData.upc.trim(),
-      unit: formData.unit,
-      isFood: formData.productType === "food",
-      quantityOnHand: formData.quantityOnHand,
-      retailPrice: formData.retailPrice,
-      reorderThreshold: formData.reorderThreshold,
-      isOnSale: canManageSales && sale.mode !== "none",
-      salePrice,
-      discount,
-      expirationDate:
-        formData.productType === "food" ? formData.expirationDate : undefined,
-      isActive: true,
-    };
-
-    createProduct.mutate(productData, {
-      onSuccess: () => navigate("/"),
-    });
+    createProduct.mutate(
+      buildCreateProductInput(formData, sale, canManageSales),
+      {
+        onSuccess: () => navigate("/"),
+      },
+    );
   };
 
   return (
@@ -174,7 +88,9 @@ export default function NewProduct() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="card">
-          <div className="card-header"></div>
+          <div className="card-header">
+            <h3 className="font-semibold">Catalog Details</h3>
+          </div>
           <div className="card-body space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -184,7 +100,7 @@ export default function NewProduct() {
                 type="text"
                 value={formData.productName}
                 onChange={(event) =>
-                  handleChange("productName", event.target.value)
+                  updateField("productName", event.target.value)
                 }
                 className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
                 placeholder="Enter product name"
@@ -204,7 +120,7 @@ export default function NewProduct() {
                 <select
                   value={formData.category}
                   onChange={(event) =>
-                    handleChange("category", event.target.value)
+                    updateField("category", event.target.value)
                   }
                   className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
                 >
@@ -227,7 +143,7 @@ export default function NewProduct() {
                 <input
                   type="text"
                   value={formData.upc}
-                  onChange={(event) => handleChange("upc", event.target.value)}
+                  onChange={(event) => updateField("upc", event.target.value)}
                   className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
                   placeholder="Enter UPC code"
                 />
@@ -238,33 +154,38 @@ export default function NewProduct() {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <legend className="mb-1 block text-sm font-medium text-gray-700">
-                Product Type
-              </legend>
-              <div className="flex h-[42px] items-center gap-4 rounded border border-gray-300 px-3">
-                <label className="flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    name="productType"
-                    value="food"
-                    checked={formData.productType === "food"}
-                    onChange={() => handleChange("productType", "food")}
-                    className="h-4 w-4 border-gray-300 text-gray-800 focus:ring-gray-400"
-                  />
-                  Food
-                </label>
-                <label className="flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    name="productType"
-                    value="non-food"
-                    checked={formData.productType === "non-food"}
-                    onChange={() => handleChange("productType", "non-food")}
-                    className="h-4 w-4 border-gray-300 text-gray-800 focus:ring-gray-400"
-                  />
-                  Non-Food
-                </label>
-              </div>
+              <fieldset>
+                <legend className="mb-1 block text-sm font-medium text-gray-700">
+                  Product Type
+                </legend>
+                <div className="flex h-[42px] items-center gap-4 rounded border border-gray-300 px-3">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="productType"
+                      checked={formData.productType === "food"}
+                      onChange={() =>
+                        updateField("productType", "food" as ProductType)
+                      }
+                      className="h-4 w-4 border-gray-300 text-gray-800 focus:ring-gray-400"
+                    />
+                    Food
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="productType"
+                      checked={formData.productType === "non-food"}
+                      onChange={() =>
+                        updateField("productType", "non-food" as ProductType)
+                      }
+                      className="h-4 w-4 border-gray-300 text-gray-800 focus:ring-gray-400"
+                    />
+                    Non-Food
+                  </label>
+                </div>
+              </fieldset>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -273,7 +194,10 @@ export default function NewProduct() {
                 <select
                   value={formData.unit}
                   onChange={(event) =>
-                    handleChange("unit", event.target.value as Unit)
+                    updateField(
+                      "unit",
+                      event.target.value as ProductFormData["unit"],
+                    )
                   }
                   className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
                 >
@@ -297,7 +221,7 @@ export default function NewProduct() {
                       type="date"
                       value={formData.expirationDate}
                       onChange={(event) =>
-                        handleChange("expirationDate", event.target.value)
+                        updateField("expirationDate", event.target.value)
                       }
                       className="w-full rounded border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
@@ -317,7 +241,7 @@ export default function NewProduct() {
                       min="0"
                       value={formData.reorderThreshold}
                       onChange={(event) =>
-                        handleChange(
+                        updateField(
                           "reorderThreshold",
                           Number.parseInt(event.target.value, 10) || 0,
                         )
@@ -338,7 +262,9 @@ export default function NewProduct() {
         </div>
 
         <div className="card">
-          <div className="card-header"></div>
+          <div className="card-header">
+            <h3 className="font-semibold">Initial Stock</h3>
+          </div>
           <div className="card-body">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -349,7 +275,7 @@ export default function NewProduct() {
                 min="0"
                 value={formData.quantityOnHand}
                 onChange={(event) =>
-                  handleChange(
+                  updateField(
                     "quantityOnHand",
                     Number.parseInt(event.target.value, 10) || 0,
                   )
@@ -366,7 +292,9 @@ export default function NewProduct() {
         </div>
 
         <div className="card">
-          <div className="card-header"></div>
+          <div className="card-header">
+            <h3 className="font-semibold">Price Setup</h3>
+          </div>
           <div className="card-body space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -378,11 +306,11 @@ export default function NewProduct() {
                 step="0.01"
                 value={formData.retailPrice}
                 onChange={(event) => {
-                  handleChange(
+                  updateField(
                     "retailPrice",
                     Number.parseFloat(event.target.value) || 0,
                   );
-                  clearSaleError();
+                  clearError("sale");
                 }}
                 className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400 sm:w-1/2"
                 placeholder="0.00"
@@ -398,10 +326,7 @@ export default function NewProduct() {
               <MarkOnSale
                 retailPrice={formData.retailPrice}
                 sale={sale}
-                onChange={(nextSale) => {
-                  setSale(nextSale);
-                  clearSaleError();
-                }}
+                onChange={handleSaleChange}
                 error={errors.sale}
               />
             )}

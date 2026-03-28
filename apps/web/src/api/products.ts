@@ -1,4 +1,4 @@
-import type { Product } from '../types/product';
+import type { CreateProductInput, Product, UpdateProductInput } from '../types/product';
 
 export const productApi = {
   getAll: async (_storeId: number): Promise<Product[]> => {
@@ -17,13 +17,13 @@ export const productApi = {
     return product;
   },
 
-  create: async (data: Partial<Product>): Promise<Product> => {
+  create: async (data: CreateProductInput): Promise<Product> => {
     // Mock create - just log and return as-is
     console.log('Create product:', data);
     throw new Error('Create not implemented in static mode');
   },
 
-  update: async (id: number, data: Partial<Product>): Promise<Product> => {
+  update: async (id: number, data: UpdateProductInput): Promise<Product> => {
     // Mock update - just log
     console.log('Update product', id, ':', data);
     throw new Error('Update not implemented in static mode');
