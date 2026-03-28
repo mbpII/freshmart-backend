@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useProductQuery, useDeleteProduct } from '../../hooks/useProducts';
+import { useProduct, useDeleteProduct } from '../../hooks/useProducts';
 import { formatCurrency, formatDate } from '../../lib/format';
 
 export default function ProductDetail() {
@@ -7,7 +7,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const productId = Number(id);
 
-  const { data: product, isLoading } = useProductQuery(productId);
+  const { data: product, isLoading } = useProduct(productId);
   const deleteProduct = useDeleteProduct();
 
   if (isLoading) return <div className="p-4">Loading...</div>;

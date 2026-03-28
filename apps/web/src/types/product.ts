@@ -32,7 +32,7 @@ export type UpdateProductInput = Partial<CreateProductInput>;
 
 export type ProductFormData = Pick<
   Product,
-  'productName' | 'category' | 'upc' | 'unit' | 'quantityOnHand' | 'retailPrice'
+  'productName' | 'category' | 'upc' | 'quantityOnHand' | 'retailPrice'
 > & {
   productType: ProductType;
   reorderThreshold: number;
@@ -43,6 +43,5 @@ export type ProductFormErrors = Partial<Record<keyof ProductFormData | 'sale', s
 
 export type ProductFormConfig = {
   categories: string[];
-  units: Unit[];
   defaults: ProductFormData;
 };

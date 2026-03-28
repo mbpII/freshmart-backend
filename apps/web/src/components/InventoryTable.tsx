@@ -1,5 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from '@tanstack/react-table';
+import { INVENTORY_PAGE_SIZE } from '../lib/constants';
+import { formatCurrency } from '../lib/format';
+import { getPaginationItems } from '../lib/pagination';
 import type { Product } from '../types/product';
 
 type Props = {
@@ -7,34 +16,67 @@ type Props = {
   itemsPerPage?: number;
 };
 
-type PaginationItem = number | 'ellipsis';
+const columns: ColumnDef<Product>[] = [
+  {
+    accessorKey: 'productName',
+    header: 'Name',
+    cell: ({ row }) => (
+      <Link to={`/products/${row.original.productId}`} className="text-blue-600 hover:underline">
+        {row.original.productName}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: 'category',
+    header: 'Category',
+  },
+  {
+    accessorKey: 'quantityOnHand',
+    header: 'Qty',
+    cell: ({ row }) => {
+      const item = row.original;
+      const isLow = item.reorderThreshold !== undefined && item.quantityOnHand <= item.reorderThreshold;
 
-function getPaginationItems(currentPage: number, totalPages: number): PaginationItem[] {
-  if (totalPages <= 5) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
+      return <span className={isLow ? 'font-semibold text-red-600' : ''}>{item.quantityOnHand}</span>;
+    },
+  },
+  {
+    accessorKey: 'retailPrice',
+    header: 'Price',
+    cell: ({ row }) => {
+      const item = row.original;
+      const displayPrice = item.isOnSale && item.salePrice ? item.salePrice : item.retailPrice;
 
-  const pages = new Set<number>([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
-  const sortedPages = Array.from(pages)
-    .filter((page) => page >= 1 && page <= totalPages)
-    .sort((a, b) => a - b);
+      if (item.isOnSale && item.salePrice) {
+        return (
+          <div>
+            <span className="text-sm text-gray-400 line-through">{formatCurrency(item.retailPrice)}</span>
+            <span className="ml-2 font-semibold text-green-600">{formatCurrency(item.salePrice)}</span>
+          </div>
+        );
+      }
 
-  const items: PaginationItem[] = [];
+      return <span>{formatCurrency(displayPrice)}</span>;
+    },
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    cell: ({ row }) => {
+      const item = row.original;
+      const isLow = item.reorderThreshold !== undefined && item.quantityOnHand <= item.reorderThreshold;
 
-  sortedPages.forEach((page, index) => {
-    const previousPage = sortedPages[index - 1];
+      return (
+        <>
+          {isLow && <span className="badge-low">LOW</span>}
+          {item.isOnSale && <span className="badge-sale ml-1">[S]</span>}
+        </>
+      );
+    },
+  },
+];
 
-    if (previousPage && page - previousPage > 1) {
-      items.push('ellipsis');
-    }
-
-    items.push(page);
-  });
-
-  return items;
-}
-
-export function InventoryTable({ products, itemsPerPage = 5 }: Props) {
+export function InventoryTable({ products, itemsPerPage = INVENTORY_PAGE_SIZE }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
 
   if (!products.length) {
@@ -46,8 +88,19 @@ export function InventoryTable({ products, itemsPerPage = 5 }: Props) {
   const page = Math.min(Math.max(currentPage, 1), totalPages);
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalProducts);
-  const paginatedProducts = products.slice(startIndex, endIndex);
+  const showingLabel = `${startIndex + 1}-${endIndex}`;
   const paginationItems = getPaginationItems(page, totalPages);
+
+  const paginatedProducts = useMemo(
+    () => products.slice(startIndex, endIndex),
+    [products, startIndex, endIndex],
+  );
+
+  const table = useReactTable({
+    data: paginatedProducts,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   const goToPage = (nextPage: number) => {
     setCurrentPage(Math.min(Math.max(nextPage, 1), totalPages));
@@ -58,52 +111,34 @@ export function InventoryTable({ products, itemsPerPage = 5 }: Props) {
       <div className="overflow-x-auto">
         <table className="data-table w-full">
           <thead>
-            <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Qty</th>
-              <th>Price</th>
-              <th>Status</th>
-            </tr>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
           </thead>
           <tbody>
-            {paginatedProducts.map((item) => {
-              const isLow = item.reorderThreshold !== undefined && item.quantityOnHand <= item.reorderThreshold;
-              const displayPrice = item.isOnSale && item.salePrice ? item.salePrice : item.retailPrice;
-
-              return (
-                <tr key={item.productId}>
-                  <td>
-                    <Link to={`/products/${item.productId}`} className="text-blue-600 hover:underline">
-                      {item.productName}
-                    </Link>
-                  </td>
-                  <td>{item.category}</td>
-                  <td className={isLow ? 'font-semibold text-red-600' : ''}>{item.quantityOnHand}</td>
-                  <td>
-                    {item.isOnSale && item.salePrice ? (
-                      <div>
-                        <span className="text-sm text-gray-400 line-through">${item.retailPrice.toFixed(2)}</span>
-                        <span className="ml-2 font-semibold text-green-600">${item.salePrice.toFixed(2)}</span>
-                      </div>
-                    ) : (
-                      <span>${displayPrice.toFixed(2)}</span>
-                    )}
-                  </td>
-                  <td>
-                    {isLow && <span className="badge-low">LOW</span>}
-                    {item.isOnSale && <span className="badge-sale ml-1">[S]</span>}
-                  </td>
-                </tr>
-              );
-            })}
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
       <div className="flex flex-col gap-3 border-t border-gray-200 px-2 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-gray-600">
-          Showing <span className="font-medium">{startIndex + 1}-{endIndex}</span> of <span className="font-medium">{totalProducts}</span> products
+          Showing <span className="font-medium">{showingLabel}</span> of{' '}
+          <span className="font-medium">{totalProducts}</span> products
         </div>
 
         <div className="flex items-center justify-between gap-2 sm:justify-end">
