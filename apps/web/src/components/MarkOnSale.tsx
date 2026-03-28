@@ -1,7 +1,4 @@
-export type SaleInput =
-  | { mode: 'price'; value: string }
-  | { mode: 'discount'; value: string }
-  | { mode: 'none' };
+import type { SaleInput } from '../types/product';
 
 type Props = {
   retailPrice: number;
