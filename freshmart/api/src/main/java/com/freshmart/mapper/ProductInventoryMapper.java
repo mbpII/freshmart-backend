@@ -15,10 +15,10 @@ public interface ProductInventoryMapper {
     @Mapping(source = "product.upc", target = "upc")
     @Mapping(source = "product.unitCost", target = "unitCost")
     @Mapping(source = "product.retailPrice", target = "retailPrice")
-    @Mapping(source = "product.onSale", target = "isOnSale")
+    @Mapping(source = "product.isOnSale", target = "isOnSale")
     @Mapping(source = "product.salePrice", target = "salePrice")
-    @Mapping(source = "product.food", target = "isFood")
-    @Mapping(source = "product.active", target = "isActive")
+    @Mapping(source = "product.isFood", target = "isFood")
+    @Mapping(source = "product.isActive", target = "isActive")
     @Mapping(source = "product.expirationDate", target = "expirationDate")
     @Mapping(source = "product.reorderThreshold", target = "reorderThreshold")
     @Mapping(source = "product.reorderQuantity", target = "reorderQuantity")
@@ -43,12 +43,12 @@ public interface ProductInventoryMapper {
             product.getSupplier() != null ? product.getSupplier().getSupplierName() : null,
             product.getUnitCost(),
             product.getRetailPrice(),
-            product.isOnSale(),
+            product.getIsOnSale(),
             product.getSalePrice(),
             inventory.getQuantityOnHand(),
             inventory.getLastUpdated(),
-            product.isFood(),
-            product.isActive(),
+            product.getIsFood(),
+            product.getIsActive(),
             product.getExpirationDate(),
             product.getReorderThreshold(),
             product.getReorderQuantity(),

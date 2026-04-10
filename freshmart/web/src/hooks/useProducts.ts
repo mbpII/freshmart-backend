@@ -41,11 +41,11 @@ export function useUpdateProduct() {
   });
 }
 
-export function useDeleteProduct() {
+export function useArchiveProduct() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: productApi.delete,
+    mutationFn: (productId: number) => productApi.archive(productId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
   });
 }

@@ -89,8 +89,8 @@ public class Product {
     public BigDecimal getRetailPrice() { return retailPrice; }
     public void setRetailPrice(BigDecimal retailPrice) { this.retailPrice = retailPrice; }
     
-    public boolean isOnSale() { return isOnSale != null && isOnSale; }
-    public void setOnSale(boolean isOnSale) { this.isOnSale = isOnSale; }
+    public Boolean getIsOnSale() { return isOnSale; }
+    public void setIsOnSale(Boolean isOnSale) { this.isOnSale = isOnSale; }
     
     public BigDecimal getSalePrice() { return salePrice; }
     public void setSalePrice(BigDecimal salePrice) { this.salePrice = salePrice; }
@@ -104,11 +104,11 @@ public class Product {
     public Integer getReorderQuantity() { return reorderQuantity; }
     public void setReorderQuantity(Integer reorderQuantity) { this.reorderQuantity = reorderQuantity; }
     
-    public boolean isFood() { return isFood != null && isFood; }
-    public void setFood(boolean isFood) { this.isFood = isFood; }
+    public Boolean getIsFood() { return isFood; }
+    public void setIsFood(Boolean isFood) { this.isFood = isFood; }
     
-    public boolean isActive() { return isActive != null && isActive; }
-    public void setActive(boolean isActive) { this.isActive = isActive; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
     
     @Override
     public boolean equals(Object o) {

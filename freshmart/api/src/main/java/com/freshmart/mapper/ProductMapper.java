@@ -12,26 +12,26 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface ProductMapper {
     
     @Mapping(target = "productId", ignore = true)
-    @Mapping(target = "active", constant = "true")
-    @Mapping(target = "onSale", constant = "false")
+    @Mapping(target = "isActive", constant = "true")
+    @Mapping(target = "isOnSale", constant = "false")
+    @Mapping(target = "isFood", constant = "false")
     @Mapping(target = "salePrice", ignore = true)
     @Mapping(target = "supplier", ignore = true)
-    @Mapping(target = "food", constant = "false")
     Product toEntity(ProductRequest request);
     
     @Mapping(source = "supplier.supplierName", target = "supplierName")
-    @Mapping(source = "onSale", target = "isOnSale")
+    @Mapping(source = "isOnSale", target = "isOnSale")
     @Mapping(source = "salePrice", target = "salePrice")
-    @Mapping(source = "food", target = "isFood")
-    @Mapping(source = "active", target = "isActive")
+    @Mapping(source = "isFood", target = "isFood")
+    @Mapping(source = "isActive", target = "isActive")
     ProductResponse toResponse(Product product);
     
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "supplier", ignore = true)
-    @Mapping(target = "active", ignore = true)
-    @Mapping(target = "onSale", ignore = true)
+    @Mapping(target = "isActive", ignore = true)
+    @Mapping(target = "isOnSale", ignore = true)
     @Mapping(target = "salePrice", ignore = true)
-    @Mapping(target = "food", ignore = true)
+    @Mapping(target = "isFood", ignore = true)
     void updateEntity(ProductRequest request, @MappingTarget Product product);
     
     default Product copy(Product product) {
@@ -43,13 +43,13 @@ public interface ProductMapper {
         copy.setSupplier(product.getSupplier());
         copy.setUnitCost(product.getUnitCost());
         copy.setRetailPrice(product.getRetailPrice());
-        copy.setOnSale(product.isOnSale());
+        copy.setIsOnSale(product.getIsOnSale());
         copy.setSalePrice(product.getSalePrice());
         copy.setExpirationDate(product.getExpirationDate());
         copy.setReorderThreshold(product.getReorderThreshold());
         copy.setReorderQuantity(product.getReorderQuantity());
-        copy.setFood(product.isFood());
-        copy.setActive(product.isActive());
+        copy.setIsFood(product.getIsFood());
+        copy.setIsActive(product.getIsActive());
         return copy;
     }
 }

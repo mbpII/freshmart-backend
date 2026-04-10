@@ -1,6 +1,6 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useProduct, useDeleteProduct } from '../../hooks/useProducts';
-import { formatCurrency, formatDate } from '../../lib/format';
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useProduct, useArchiveProduct } from "../../hooks/useProducts";
+import { formatCurrency, formatDate } from "../../lib/format";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -8,24 +8,30 @@ export default function ProductDetail() {
   const productId = Number(id);
 
   const { data: product, isLoading } = useProduct(productId);
-  const deleteProduct = useDeleteProduct();
+  const archiveProduct = useArchiveProduct();
 
   if (isLoading) return <div className="p-4">Loading...</div>;
   if (!product) return <div className="p-4">Product not found</div>;
 
-  const handleDelete = () => {
-    if (confirm('Archive this product?')) {
-      deleteProduct.mutate(productId, { onSuccess: () => navigate('/') });
+  const handleArchive = () => {
+    if (confirm("Remove this product ?")) {
+      archiveProduct.mutate(productId, { onSuccess: () => navigate("/") });
     }
   };
 
   return (
     <div className="p-4 space-y-6">
       <div className="flex justify-between items-center">
-        <Link to="/" className="text-blue-600 hover:underline">&larr; Back</Link>
+        <Link to="/" className="text-blue-600 hover:underline">
+          &larr; Back
+        </Link>
         <div className="flex gap-2">
-          <Link to={`/products/${productId}/edit`} className="btn-secondary">Edit</Link>
-          <button onClick={handleDelete} className="btn-danger">Archive</button>
+          <Link to={`/products/${productId}/edit`} className="btn-secondary">
+            Edit
+          </Link>
+          <button onClick={handleArchive} className="btn-danger">
+            Archive
+          </button>
         </div>
       </div>
 
@@ -34,7 +40,7 @@ export default function ProductDetail() {
         <div className="flex gap-4 text-sm text-gray-600 mt-1">
           <span>UPC: {product.upc}</span>
           <span>Category: {product.category}</span>
-          <span>Type: {product.isFood ? 'Food' : 'Non-Food'}</span>
+          <span>Type: {product.isFood ? "Food" : "Non-Food"}</span>
         </div>
         <div className="flex gap-2 mt-2">
           {product.isOnSale && <span className="badge-sale">[S]</span>}
@@ -47,13 +53,21 @@ export default function ProductDetail() {
         </div>
         <div className="card-body flex gap-8">
           <div>
-            <span className="text-xs font-semibold text-gray-500 block">Regular</span>
-            <span className="text-lg font-semibold">{formatCurrency(product.retailPrice)}</span>
+            <span className="text-xs font-semibold text-gray-500 block">
+              Regular
+            </span>
+            <span className="text-lg font-semibold">
+              {formatCurrency(product.retailPrice)}
+            </span>
           </div>
           {product.isOnSale && product.salePrice && (
             <div>
-              <span className="text-xs font-semibold text-gray-500 block">Sale</span>
-              <span className="text-lg font-semibold text-green-600">{formatCurrency(product.salePrice)}</span>
+              <span className="text-xs font-semibold text-gray-500 block">
+                Sale
+              </span>
+              <span className="text-lg font-semibold text-green-600">
+                {formatCurrency(product.salePrice)}
+              </span>
             </div>
           )}
         </div>
@@ -70,7 +84,6 @@ export default function ProductDetail() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

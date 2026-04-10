@@ -1,5 +1,7 @@
 package com.freshmart.controller;
 
+import com.freshmart.dto.CreateProductRequest;
+import com.freshmart.dto.InventoryRequest;
 import com.freshmart.dto.ProductInventoryResponse;
 import com.freshmart.dto.ProductRequest;
 import com.freshmart.dto.ProductResponse;
@@ -29,9 +31,34 @@ public class ProductController {
     }
     
     @PostMapping
-    @Operation(summary = "Create a new product in the catalog")
-    public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
-        ProductResponse response = productService.createProduct(request);
+    @Operation(summary = "Create a new product with initial inventory")
+    public ResponseEntity<ProductInventoryResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
+        ProductRequest productRequest = new ProductRequest(
+            request.productName(),
+            request.category(),
+            request.upc(),
+            request.supplierId(),
+            request.unitCost(),
+            request.retailPrice(),
+            request.isFood(),
+            request.reorderThreshold(),
+            request.reorderQuantity(),
+            request.expirationDate()
+        );
+        
+        ProductResponse productResponse = productService.createProduct(productRequest);
+        
+        Long storeId = request.storeId() != null ? request.storeId() : 101L;
+        Integer initialQty = request.initialQuantity() != null ? request.initialQuantity() : 0;
+        
+        InventoryRequest inventoryRequest = new InventoryRequest(
+            productResponse.productId(),
+            initialQty
+        );
+        inventoryService.addToInventory(storeId, inventoryRequest);
+        
+        ProductInventoryResponse response = inventoryService.getProductInventory(
+            productResponse.productId(), storeId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
@@ -43,7 +70,7 @@ public class ProductController {
     }
     
     @GetMapping
-    @Operation(summary = "Get all products for a store (combined with inventory)")
+    @Operation(summary = "Get all products for a store")
     public ResponseEntity<List<ProductInventoryResponse>> getProductsByStore(
             @Parameter(description = "Store ID") @RequestParam(required = false) Long storeId) {
         if (storeId == null) {
@@ -60,6 +87,18 @@ public class ProductController {
             @Valid @RequestBody ProductRequest request) {
         ProductResponse response = productService.updateProduct(id, request);
         return ResponseEntity.ok(response);
+    }
+    
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Archive product (soft delete)")
+    public ResponseEntity<Void> archiveProduct(
+            @PathVariable Long id,
+            @Parameter(description = "Store ID") @RequestParam(required = false) Long storeId) {
+        if (storeId == null) {
+            storeId = 101L;
+        }
+        inventoryService.archiveFromStore(id, storeId);
+        return ResponseEntity.noContent().build();
     }
     
     @PostMapping("/{id}/sale")

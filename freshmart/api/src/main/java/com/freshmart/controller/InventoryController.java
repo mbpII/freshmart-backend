@@ -31,7 +31,7 @@ public class InventoryController {
     public ResponseEntity<InventoryResponse> addToInventory(
             @PathVariable Long storeId,
             @Valid @RequestBody InventoryRequest request) {
-        InventoryResponse response = inventoryService.createInventory(storeId, request);
+        InventoryResponse response = inventoryService.addToInventory(storeId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     

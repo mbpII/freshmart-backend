@@ -86,21 +86,56 @@ com.freshmart/
 - [x] **Verify build** — `mvn clean compile -DskipTests` succeeds
 
 ### API Endpoints
+
+**Products (Epic 1 - Complete)**
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/products` | Create product in catalog |
-| GET | `/api/products` | List products for store (combined with inventory) |
+| POST | `/api/products` | Create product with optional initial inventory |
+| GET | `/api/products` | List products for store |
 | GET | `/api/products/{id}` | Get product details |
 | PUT | `/api/products/{id}` | Update product |
+| DELETE | `/api/products/{id}` | Archive product (soft delete) |
 | POST | `/api/products/{id}/sale` | Mark product on sale |
 | DELETE | `/api/products/{id}/sale` | Remove sale |
-| POST | `/api/stores/{storeId}/inventory` | Link product to store |
-| GET | `/api/stores/{storeId}/inventory` | Get store inventory |
-| DELETE | `/api/stores/{storeId}/inventory/{productId}` | Archive from store |
-| POST | `/api/inventory/products` | Create product + inventory in one call |
 
-### Next Steps
-- [ ] Wire frontend to real API endpoints (replace mock data)
+**Inventory (Epic 3 - Stubbed)**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/stores/{storeId}/inventory` | Get store inventory (basic) |
+| DELETE | `/api/stores/{storeId}/inventory/{productId}` | Remove from store |
+
+### Architecture Note
+- **Product is the main resource** - Inventory behavior attaches to products
+- **Stock changes** are explicit and auditable (full implementation in Epic 3)
+- **Initial stock** can be set during product creation via `initialQuantity` field
+
+## Implementation Plan
+
+### Phase 1: Wire Frontend to Real API
+- [ ] Update `src/api/products.ts` to use `/api/*` endpoints (Vite proxy already configured at `localhost:8080`)
+- [ ] Map frontend types to backend DTOs - verify field alignment between `ProductInventoryResponse` and frontend `Product` type
+- [ ] Use combined endpoint `POST /api/inventory/products` for creating products (creates catalog entry + store inventory in one call)
+- [ ] Update React Query hooks with proper error handling and loading states
+- [ ] Create edit product form component - reuse create form with pre-populated data
+- [ ] Add API error display (inline form errors + toast notifications)
+
+### Phase 2: Pretty Colors / UI Improvements
+- [ ] Replace grayscale theme with fresh grocery palette:
+  - Primary: emerald/slate (fresh feel)
+  - Food items: warm amber accents
+  - Status badges: semantic colors (red=expired/low, yellow=warning, green=success)
+- [ ] Add smooth transitions and hover states to all interactive elements
+- [ ] Improve table styling with zebra striping and better typography hierarchy
+- [ ] Replace loading text with skeleton placeholders
+- [ ] Add card shadows and rounded corners for visual depth
+
+### Phase 3: Performance Testing & Optimization
+- [ ] Add Lighthouse CI configuration for automated performance audits
+- [ ] Implement virtual scrolling for large inventory lists using `react-window`
+- [ ] Optimize React re-renders with `React.memo` and `useMemo` where needed
+- [ ] Add performance budgets: initial bundle <200KB, API response <500ms
+- [ ] Enable React Query stale-while-revalidate patterns for perceived speed
+
+### Future
 - [ ] Implement authentication (replace CurrentUserService stub)
-- [ ] Add frontend routing for edit product page
 - [ ] Write integration tests for API endpoints

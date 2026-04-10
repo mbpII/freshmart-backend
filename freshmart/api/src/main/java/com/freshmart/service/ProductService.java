@@ -92,7 +92,7 @@ public class ProductService {
             throw new IllegalArgumentException("Sale price must be less than retail price");
         }
         
-        product.setOnSale(true);
+        product.setIsOnSale(true);
         product.setSalePrice(salePrice);
         return productRepository.save(product);
     }
@@ -102,7 +102,7 @@ public class ProductService {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
         
-        product.setOnSale(false);
+        product.setIsOnSale(false);
         product.setSalePrice(null);
         return productRepository.save(product);
     }

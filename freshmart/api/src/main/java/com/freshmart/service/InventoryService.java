@@ -48,7 +48,7 @@ public class InventoryService {
     }
     
     @Transactional
-    public InventoryResponse createInventory(Long storeId, InventoryRequest request) {
+    public InventoryResponse addToInventory(Long storeId, InventoryRequest request) {
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new IllegalArgumentException("Store not found with id: " + storeId));
         

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record CreateProductWithInventoryRequest(
+public record CreateProductRequest(
     @NotBlank(message = "Product name is required")
     @Size(max = 200, message = "Product name must not exceed 200 characters")
     String productName,
@@ -34,10 +34,8 @@ public record CreateProductWithInventoryRequest(
     
     LocalDate expirationDate,
     
-    @NotNull(message = "Initial quantity is required")
     @Min(value = 0, message = "Initial quantity must be non-negative")
     Integer initialQuantity,
     
-    @NotNull(message = "Store ID is required")
     Long storeId
 ) {}

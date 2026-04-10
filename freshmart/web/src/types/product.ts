@@ -13,22 +13,48 @@ export type Product = {
   productName: string;
   category: string;
   upc: string;
-  unit: Unit;
-  isFood: boolean;
-  quantityOnHand: number;
-  lastUpdated: string;
+  supplierName?: string;
+  unitCost?: number;
   retailPrice: number;
-  expirationDate?: string;
-  reorderThreshold?: number;
   isOnSale: boolean;
   salePrice?: number;
-  discount?: number;
+  quantityOnHand: number;
+  lastUpdated: string;
+  isFood: boolean;
   isActive: boolean;
+  expirationDate?: string;
+  reorderThreshold?: number;
+  reorderQuantity?: number;
+  inventoryId?: number;
 };
 
-export type CreateProductInput = Omit<Product, 'productId' | 'storeId' | 'lastUpdated'>;
+export type CreateProductInput = {
+  productName: string;
+  category: string;
+  upc: string;
+  supplierId?: number;
+  unitCost?: number;
+  retailPrice: number;
+  isFood: boolean;
+  reorderThreshold?: number;
+  reorderQuantity?: number;
+  expirationDate?: string;
+  initialQuantity: number;
+  storeId: number;
+};
 
-export type UpdateProductInput = Partial<CreateProductInput>;
+export type UpdateProductInput = Partial<{
+  productName: string;
+  category: string;
+  upc: string;
+  supplierId: number;
+  unitCost: number;
+  retailPrice: number;
+  isFood: boolean;
+  reorderThreshold: number;
+  reorderQuantity: number;
+  expirationDate: string;
+}>;
 
 export type ProductFormData = Pick<
   Product,
