@@ -34,7 +34,7 @@ npm run build                 # tsc -b && vite build
 npm run lint                  # eslint
 npm run preview               # preview production build
 ```
-- Routes: `/` (product list), `/products/:id` (detail), `/products/new` (create), `/products/:id/edit` (TODO stub)
+- Routes: `/` (product list), `/products/:id` (detail), `/products/new` (create), `/products/:id/edit` (edit)
 - State: React Query (staleTime 30s, no refetch on focus)
 - Forms: React Hook Form + Zod validation
 - Tailwind 4 — no `tailwind.config.js`; config via CSS
@@ -74,7 +74,7 @@ com.freshmart/
 
 ## Current Task Plan
 
-### EPIC-01: Backend Implementation ✅ COMPLETE
+### EPIC-01: Core Functionality ✅ COMPLETE
 - [x] **Start database** — `docker compose up -d` to spin up PostgreSQL
 - [x] **Create Repositories** — JPA repositories for all entities
 - [x] **Create Domain Events** — `InventoryAdjustedEvent` for transaction audit
@@ -83,7 +83,9 @@ com.freshmart/
 - [x] **Create Services** — Product, Inventory, TransactionRecording, CurrentUser (stub)
 - [x] **Create Controllers** — REST endpoints for products, inventory, stores
 - [x] **Create Exception Handler** — Global @RestControllerAdvice
-- [x] **Verify build** — `mvn clean compile -DskipTests` succeeds
+- [x] **Scope sale state per store** — persist sale modifier on `inventory`
+- [x] **Finish frontend create/edit/detail flows** — create, edit, remove, stock movement, sale apply/remove
+- [x] **Verify builds** — `mvn clean compile -DskipTests` and `npm run build` succeed
 
 ### API Endpoints
 
@@ -98,11 +100,14 @@ com.freshmart/
 | POST | `/api/products/{id}/sale` | Mark product on sale |
 | DELETE | `/api/products/{id}/sale` | Remove sale |
 
-**Inventory (Epic 3 - Stubbed)**
+**Inventory (Used by Epic 1 flows)**
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/stores/{storeId}/inventory` | Get store inventory (basic) |
+| GET | `/api/stores/{storeId}/inventory` | Get store inventory |
 | DELETE | `/api/stores/{storeId}/inventory/{productId}` | Remove from store |
+| POST | `/api/stores/{storeId}/inventory/{productId}/receive` | Receive stock |
+| POST | `/api/stores/{storeId}/inventory/{productId}/sell` | Sell stock |
+| POST | `/api/stores/{storeId}/inventory/{productId}/adjust` | Adjust stock |
 
 ### Architecture Note
 - **Product is the main resource** - Inventory behavior attaches to products
@@ -111,13 +116,13 @@ com.freshmart/
 
 ## Implementation Plan
 
-### Phase 1: Wire Frontend to Real API
-- [ ] Update `src/api/products.ts` to use `/api/*` endpoints (Vite proxy already configured at `localhost:8080`)
-- [ ] Map frontend types to backend DTOs - verify field alignment between `ProductInventoryResponse` and frontend `Product` type
-- [ ] Use combined endpoint `POST /api/inventory/products` for creating products (creates catalog entry + store inventory in one call)
-- [ ] Update React Query hooks with proper error handling and loading states
-- [ ] Create edit product form component - reuse create form with pre-populated data
-- [ ] Add API error display (inline form errors + toast notifications)
+### Phase 1: Wire Frontend to Real API ✅
+- [x] Update `src/api/products.ts` to use `/api/*` endpoints
+- [x] Align frontend types with backend DTOs for catalog and inventory responses
+- [x] Use `POST /api/products` for product creation with initial inventory
+- [x] Update React Query hooks with mutation invalidation for list/detail refresh
+- [x] Reuse the product form for edit flow with pre-populated data
+- [x] Add inline API error display on create/edit/detail actions
 
 ### Phase 2: Pretty Colors / UI Improvements
 - [ ] Replace grayscale theme with fresh grocery palette:
@@ -139,3 +144,4 @@ com.freshmart/
 ### Future
 - [ ] Implement authentication (replace CurrentUserService stub)
 - [ ] Write integration tests for API endpoints
+- [ ] Review and simplify temporary frontend form/detail components during UI polish

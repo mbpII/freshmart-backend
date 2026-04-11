@@ -22,7 +22,7 @@ export default function App() {
           <Route path="/" element={<ProductsIndex />} />
           <Route path="/products/new" element={<ProductForm />} />
           <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/products/:id/edit" element={<div className="p-4">Edit form (TODO)</div>} />
+          <Route path="/products/:id/edit" element={<ProductForm />} />
         </Routes>
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />

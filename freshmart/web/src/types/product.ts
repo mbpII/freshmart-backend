@@ -7,9 +7,8 @@ export type SaleInput =
   | { mode: 'discount'; value: string }
   | { mode: 'none' };
 
-export type Product = {
+export type ProductCatalog = {
   productId: number;
-  storeId: number;
   productName: string;
   category: string;
   upc: string;
@@ -17,14 +16,19 @@ export type Product = {
   unitCost?: number;
   retailPrice: number;
   isOnSale: boolean;
+  salesPriceModifier?: number;
   salePrice?: number;
-  quantityOnHand: number;
-  lastUpdated: string;
   isFood: boolean;
   isActive: boolean;
   expirationDate?: string;
   reorderThreshold?: number;
   reorderQuantity?: number;
+};
+
+export type Product = ProductCatalog & {
+  storeId: number;
+  quantityOnHand: number;
+  lastUpdated: string;
   inventoryId?: number;
 };
 
@@ -60,6 +64,8 @@ export type ProductFormData = Pick<
   Product,
   'productName' | 'category' | 'upc' | 'quantityOnHand' | 'retailPrice'
 > & {
+  unitCost?: number;
+  reorderQuantity: number;
   productType: ProductType;
   reorderThreshold: number;
   expirationDate: string;

@@ -1,13 +1,14 @@
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FormSection } from '../../components/form/FormSection';
 import { InputField } from '../../components/form/InputField';
 import { RadioGroupField } from '../../components/form/RadioGroupField';
 import { SelectField } from '../../components/form/SelectField';
 import productFormConfig from '../../data/product-form.json';
-import { useCreateProduct } from '../../hooks/useProducts';
-import { buildCreateProductInput } from '../../lib/productForm';
+import { useCreateProduct, useProduct, useUpdateProduct } from '../../hooks/useProducts';
+import { buildCreateProductInput, buildProductFormDefaults, buildUpdateProductInput } from '../../lib/productForm';
 import { productFormSchema } from '../../lib/validation';
 import type { ProductFormConfig, ProductFormData, ProductType } from '../../types/product';
 
@@ -24,13 +25,19 @@ const productTypeOptions: { label: string; value: ProductType }[] = [
 ];
 
 export default function ProductForm() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const productId = Number(id);
+  const isEditMode = Number.isFinite(productId) && productId > 0;
   const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const { data: product, isLoading: isLoadingProduct } = useProduct(productId);
   const canManageSales = isManager();
 
   const {
     register,
     handleSubmit,
+    reset,
     watch,
     setValue,
     formState: { errors, isSubmitting },
@@ -41,11 +48,29 @@ export default function ProductForm() {
 
   const productType = watch('productType');
 
+  useEffect(() => {
+    if (isEditMode && product) {
+      reset(buildProductFormDefaults(product));
+    }
+  }, [isEditMode, product, reset]);
+
   const onSubmit = (values: ProductFormData) => {
+    if (isEditMode) {
+      updateProduct.mutate(
+        { id: productId, data: buildUpdateProductInput(values) },
+        { onSuccess: () => navigate(`/products/${productId}`) },
+      );
+      return;
+    }
+
     createProduct.mutate(buildCreateProductInput(values), {
       onSuccess: () => navigate('/'),
     });
   };
+
+  if (isEditMode && isLoadingProduct) {
+    return <div className="mx-auto max-w-2xl p-4">Loading...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-2xl p-4">
@@ -55,7 +80,7 @@ export default function ProductForm() {
         </Link>
       </div>
 
-      <h1 className="mb-6 text-2xl font-bold">Add Product to Inventory</h1>
+      <h1 className="mb-6 text-2xl font-bold">{isEditMode ? 'Edit Product' : 'Add Product to Inventory'}</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <FormSection title="Catalog Details">
@@ -119,38 +144,79 @@ export default function ProductForm() {
           )}
         </FormSection>
 
-        <FormSection title="Initial Stock">
-          <InputField
-            label="Initial Qty *"
-            type="number"
-            min={0}
-            registration={register('quantityOnHand', { valueAsNumber: true })}
-            className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400 sm:w-1/2"
-            error={errors.quantityOnHand?.message}
-          />
-        </FormSection>
+        {!isEditMode && (
+          <FormSection title="Initial Stock">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <InputField
+              label="Initial Qty *"
+              type="number"
+              min={0}
+              registration={register('quantityOnHand', { valueAsNumber: true })}
+              className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              error={errors.quantityOnHand?.message}
+            />
+
+            <InputField
+              label="Reorder Quantity"
+              type="number"
+              min={0}
+              registration={register('reorderQuantity', { valueAsNumber: true })}
+              className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              error={errors.reorderQuantity?.message}
+            />
+          </div>
+          </FormSection>
+        )}
+
+        {isEditMode && (
+          <FormSection title="Inventory Snapshot">
+            <InputField
+              label="Current Quantity"
+              type="number"
+              registration={register('quantityOnHand', { valueAsNumber: true })}
+              className="w-full rounded border border-gray-300 bg-gray-100 px-3 py-2"
+              error={errors.quantityOnHand?.message}
+              disabled
+            />
+          </FormSection>
+        )}
 
         <FormSection title="Price Setup">
-          <InputField
-            label="Retail Price *"
-            type="number"
-            min={0}
-            step="0.01"
-            placeholder="0.00"
-            registration={register('retailPrice', { valueAsNumber: true })}
-            className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400 sm:w-1/2"
-            error={errors.retailPrice?.message}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <InputField
+              label="Unit Cost"
+              type="number"
+              min={0}
+              step="0.01"
+              placeholder="0.00"
+              registration={register('unitCost', {
+                setValueAs: (value) => (value === '' ? undefined : Number(value)),
+              })}
+              className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              error={errors.unitCost?.message}
+            />
+
+            <InputField
+              label="Retail Price *"
+              type="number"
+              min={0}
+              step="0.01"
+              placeholder="0.00"
+              registration={register('retailPrice', { valueAsNumber: true })}
+              className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              error={errors.retailPrice?.message}
+            />
+          </div>
 
           {!canManageSales && (
             <p className="text-xs text-gray-500">Sale controls are manager-only and currently hidden.</p>
           )}
         </FormSection>
 
-        {createProduct.isError && (
+        {(createProduct.isError || updateProduct.isError) && (
           <div className="rounded border border-red-300 bg-red-50 px-4 py-3 text-red-700">
             <p className="text-sm">
-              Error creating product: {(createProduct.error as Error)?.message || 'Something went wrong'}
+              Error saving product: {((isEditMode ? updateProduct.error : createProduct.error) as Error)?.message || 'Something went wrong'}
             </p>
           </div>
         )}
@@ -158,10 +224,16 @@ export default function ProductForm() {
         <div className="flex gap-3 pt-4">
           <button
             type="submit"
-            disabled={isSubmitting || createProduct.isPending}
+            disabled={isSubmitting || createProduct.isPending || updateProduct.isPending}
             className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {createProduct.isPending ? 'Creating...' : 'Add to Inventory'}
+            {isEditMode
+              ? updateProduct.isPending
+                ? 'Saving...'
+                : 'Save Changes'
+              : createProduct.isPending
+                ? 'Creating...'
+                : 'Add to Inventory'}
           </button>
           <Link to="/" className="btn-secondary">
             Cancel

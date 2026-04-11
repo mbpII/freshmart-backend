@@ -14,7 +14,6 @@ public interface ProductMapper {
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "isActive", constant = "true")
     @Mapping(target = "isOnSale", constant = "false")
-    @Mapping(target = "isFood", constant = "false")
     @Mapping(target = "salePrice", ignore = true)
     @Mapping(target = "supplier", ignore = true)
     Product toEntity(ProductRequest request);
@@ -31,7 +30,6 @@ public interface ProductMapper {
     @Mapping(target = "isActive", ignore = true)
     @Mapping(target = "isOnSale", ignore = true)
     @Mapping(target = "salePrice", ignore = true)
-    @Mapping(target = "isFood", ignore = true)
     void updateEntity(ProductRequest request, @MappingTarget Product product);
     
     default Product copy(Product product) {

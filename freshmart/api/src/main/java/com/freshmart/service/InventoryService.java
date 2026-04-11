@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,21 +30,24 @@ public class InventoryService {
     private final CurrentUserService currentUserService;
     private final InventoryMapper inventoryMapper;
     private final ProductInventoryMapper productInventoryMapper;
+    private final PricingService pricingService;
     private final ApplicationEventPublisher eventPublisher;
     
     public InventoryService(InventoryRepository inventoryRepository,
-                           StoreRepository storeRepository,
-                           ProductService productService,
-                           CurrentUserService currentUserService,
-                           InventoryMapper inventoryMapper,
-                           ProductInventoryMapper productInventoryMapper,
-                           ApplicationEventPublisher eventPublisher) {
+                   StoreRepository storeRepository,
+                   ProductService productService,
+                    CurrentUserService currentUserService,
+                    InventoryMapper inventoryMapper,
+                    ProductInventoryMapper productInventoryMapper,
+                    PricingService pricingService,
+                    ApplicationEventPublisher eventPublisher) {
         this.inventoryRepository = inventoryRepository;
         this.storeRepository = storeRepository;
         this.productService = productService;
         this.currentUserService = currentUserService;
         this.inventoryMapper = inventoryMapper;
         this.productInventoryMapper = productInventoryMapper;
+        this.pricingService = pricingService;
         this.eventPublisher = eventPublisher;
     }
     
@@ -63,6 +67,8 @@ public class InventoryService {
         inventory.setStore(store);
         inventory.setQuantityOnHand(request.initialQuantity());
         inventory.setActive(true);
+        inventory.setIsOnSale(false);
+        inventory.setSalesPriceModifier(null);
         
         Inventory saved = inventoryRepository.save(inventory);
         
@@ -83,7 +89,7 @@ public class InventoryService {
     @Transactional(readOnly = true)
     public List<ProductInventoryResponse> getInventoryByStore(Long storeId) {
         return inventoryRepository.findActiveInventoryByStoreIdWithProduct(storeId).stream()
-            .map(productInventoryMapper::toResponse)
+            .map(this::toProductInventoryResponse)
             .collect(Collectors.toList());
     }
     
@@ -93,10 +99,11 @@ public class InventoryService {
             .orElseThrow(() -> new InventoryNotFoundException(
                 "Product " + productId + " not found in store " + storeId + " inventory"));
         
-        return productInventoryMapper.toResponse(inventory);
+        return toProductInventoryResponse(inventory);
     }
     
     @Transactional
+    // Soft archive only: marks the store inventory record inactive without deleting the product globally.
     public void archiveFromStore(Long productId, Long storeId) {
         Inventory inventory = inventoryRepository.findByProductProductIdAndStoreStoreIdAndIsActiveTrue(productId, storeId)
             .orElseThrow(() -> new InventoryNotFoundException(
@@ -108,19 +115,38 @@ public class InventoryService {
     
     @Transactional
     public ProductInventoryResponse adjustQuantity(Long productId, Long storeId, Integer quantityChange, String notes) {
+        return adjustQuantity(productId, storeId, quantityChange, notes,
+            quantityChange > 0 ? TransactionType.RECEIVE : TransactionType.ADJUSTMENT);
+    }
+
+    @Transactional
+    public ProductInventoryResponse receiveStock(Long productId, Long storeId, Integer quantity, String notes) {
+        return adjustQuantity(productId, storeId, Math.abs(quantity), notes, TransactionType.RECEIVE);
+    }
+
+    @Transactional
+    public ProductInventoryResponse sellStock(Long productId, Long storeId, Integer quantity, String notes) {
+        return adjustQuantity(productId, storeId, -Math.abs(quantity), notes, TransactionType.SALE);
+    }
+
+    private ProductInventoryResponse adjustQuantity(Long productId,
+                                                   Long storeId,
+                                                   Integer quantityChange,
+                                                   String notes,
+                                                   TransactionType transactionType) {
         Inventory inventory = inventoryRepository.findByProductProductIdAndStoreStoreIdAndIsActiveTrue(productId, storeId)
             .orElseThrow(() -> new InventoryNotFoundException(
                 "Product " + productId + " not found in store " + storeId + " inventory"));
         
         int newQuantity = inventory.getQuantityOnHand() + quantityChange;
         if (newQuantity < 0) {
-            throw new IllegalArgumentException("Insufficient inventory. Current: " + inventory.getQuantityOnHand() + ", attempted change: " + quantityChange);
+            throw new IllegalArgumentException("Insufficient inventory. Current: " + inventory.getQuantityOnHand() +
+                ", attempted change: " + quantityChange);
         }
         
         inventory.setQuantityOnHand(newQuantity);
         Inventory saved = inventoryRepository.save(inventory);
-        
-        TransactionType transactionType = quantityChange > 0 ? TransactionType.RECEIVE : TransactionType.ADJUSTMENT;
+
         InventoryAdjustedEvent event = new InventoryAdjustedEvent(
             productId,
             storeId,
@@ -131,16 +157,66 @@ public class InventoryService {
         );
         eventPublisher.publishEvent(event);
         
-        return productInventoryMapper.toResponse(saved);
+        return toProductInventoryResponse(saved);
     }
-    
+
     @Transactional
-    public ProductInventoryResponse receiveStock(Long productId, Long storeId, Integer quantity, String notes) {
-        return adjustQuantity(productId, storeId, Math.abs(quantity), notes);
+    public ProductInventoryResponse markProductOnSale(Long productId,
+                                                      Long storeId,
+                                                      BigDecimal salesPriceModifier) {
+        Inventory inventory = inventoryRepository.findByProductProductIdAndStoreStoreIdAndIsActiveTrue(productId, storeId)
+            .orElseThrow(() -> new InventoryNotFoundException(
+                "Product " + productId + " not found in store " + storeId + " inventory"));
+
+        BigDecimal percentOff = pricingService.normalizeSalesPriceModifier(salesPriceModifier);
+        inventory.setIsOnSale(true);
+        inventory.setSalesPriceModifier(percentOff);
+
+        Inventory saved = inventoryRepository.save(inventory);
+        return toProductInventoryResponse(saved);
     }
-    
+
     @Transactional
-    public ProductInventoryResponse sellStock(Long productId, Long storeId, Integer quantity, String notes) {
-        return adjustQuantity(productId, storeId, -Math.abs(quantity), notes);
+    public ProductInventoryResponse removeSale(Long productId, Long storeId) {
+        Inventory inventory = inventoryRepository.findByProductProductIdAndStoreStoreIdAndIsActiveTrue(productId, storeId)
+            .orElseThrow(() -> new InventoryNotFoundException(
+                "Product " + productId + " not found in store " + storeId + " inventory"));
+
+        inventory.setIsOnSale(false);
+        inventory.setSalesPriceModifier(null);
+
+        Inventory saved = inventoryRepository.save(inventory);
+        return toProductInventoryResponse(saved);
+    }
+
+    private ProductInventoryResponse toProductInventoryResponse(Inventory inventory) {
+        ProductInventoryResponse base = productInventoryMapper.toResponse(inventory);
+        BigDecimal salePrice = pricingService.calculateSalePrice(
+            base.retailPrice(),
+            base.salesPriceModifier(),
+            base.isOnSale()
+        );
+
+        return new ProductInventoryResponse(
+            base.productId(),
+            base.storeId(),
+            base.productName(),
+            base.category(),
+            base.upc(),
+            base.supplierName(),
+            base.unitCost(),
+            base.retailPrice(),
+            base.isOnSale(),
+            base.salesPriceModifier(),
+            salePrice,
+            base.quantityOnHand(),
+            base.lastUpdated(),
+            base.isFood(),
+            base.isActive(),
+            base.expirationDate(),
+            base.reorderThreshold(),
+            base.reorderQuantity(),
+            base.inventoryId()
+        );
     }
 }

@@ -4,7 +4,6 @@ import com.freshmart.dto.InventoryRequest;
 import com.freshmart.dto.InventoryResponse;
 import com.freshmart.dto.ProductInventoryResponse;
 import com.freshmart.dto.QuantityAdjustmentRequest;
-import com.freshmart.service.CurrentUserService;
 import com.freshmart.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,11 +18,9 @@ import org.springframework.web.bind.annotation.*;
 public class InventoryController {
     
     private final InventoryService inventoryService;
-    private final CurrentUserService currentUserService;
     
-    public InventoryController(InventoryService inventoryService, CurrentUserService currentUserService) {
+    public InventoryController(InventoryService inventoryService) {
         this.inventoryService = inventoryService;
-        this.currentUserService = currentUserService;
     }
     
     @PostMapping

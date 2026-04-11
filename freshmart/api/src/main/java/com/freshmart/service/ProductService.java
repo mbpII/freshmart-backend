@@ -83,30 +83,6 @@ public class ProductService {
         return productMapper.toResponse(saved);
     }
     
-    @Transactional
-    public Product markProductOnSale(Long productId, java.math.BigDecimal salePrice) {
-        Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
-        
-        if (salePrice.compareTo(product.getRetailPrice()) >= 0) {
-            throw new IllegalArgumentException("Sale price must be less than retail price");
-        }
-        
-        product.setIsOnSale(true);
-        product.setSalePrice(salePrice);
-        return productRepository.save(product);
-    }
-    
-    @Transactional
-    public Product removeSale(Long productId) {
-        Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
-        
-        product.setIsOnSale(false);
-        product.setSalePrice(null);
-        return productRepository.save(product);
-    }
-    
     Product getProductEntity(Long id) {
         return productRepository.findById(id)
             .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));

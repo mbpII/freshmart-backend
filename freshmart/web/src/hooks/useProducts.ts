@@ -3,6 +3,17 @@ import { productApi } from '../api/products';
 import { DEFAULT_STORE_ID } from '../lib/constants';
 import type { CreateProductInput, UpdateProductInput } from '../types/product';
 
+type StockMutationInput = {
+  productId: number;
+  quantityChange: number;
+  notes: string;
+};
+
+function invalidateProductQueries(qc: ReturnType<typeof useQueryClient>, id: number) {
+  qc.invalidateQueries({ queryKey: ['products'] });
+  qc.invalidateQueries({ queryKey: ['product', id] });
+}
+
 export function useProducts() {
   return useQuery({
     queryKey: ['products'],
@@ -35,8 +46,7 @@ export function useUpdateProduct() {
     mutationFn: ({ id, data }: { id: number; data: UpdateProductInput }) =>
       productApi.update(id, data),
     onSuccess: (_, { id }) => {
-      qc.invalidateQueries({ queryKey: ['products'] });
-      qc.invalidateQueries({ queryKey: ['product', id] });
+      invalidateProductQueries(qc, id);
     },
   });
 }
@@ -47,5 +57,54 @@ export function useArchiveProduct() {
   return useMutation({
     mutationFn: (productId: number) => productApi.archive(productId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+  });
+}
+
+export function useMarkOnSale() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ productId, salesPriceModifier }: { productId: number; salesPriceModifier: number }) =>
+      productApi.markOnSale(productId, salesPriceModifier),
+    onSuccess: (_, { productId }) => invalidateProductQueries(qc, productId),
+  });
+}
+
+export function useRemoveSale() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (productId: number) => productApi.removeSale(productId),
+    onSuccess: (_, productId) => invalidateProductQueries(qc, productId),
+  });
+}
+
+export function useReceiveStock() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ productId, quantityChange, notes }: StockMutationInput) =>
+      productApi.receiveStock(productId, quantityChange, notes),
+    onSuccess: (_, { productId }) => invalidateProductQueries(qc, productId),
+  });
+}
+
+export function useSellStock() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ productId, quantityChange, notes }: StockMutationInput) =>
+      productApi.sellStock(productId, quantityChange, notes),
+    onSuccess: (_, { productId }) => invalidateProductQueries(qc, productId),
+  });
+}
+
+export function useAdjustStock() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ productId, quantityChange, notes }: StockMutationInput) =>
+      productApi.adjustStock(productId, quantityChange, notes),
+    onSuccess: (_, { productId }) => invalidateProductQueries(qc, productId),
   });
 }

@@ -14,6 +14,7 @@ public record ProductInventoryResponse(
     BigDecimal unitCost,
     BigDecimal retailPrice,
     Boolean isOnSale,
+    BigDecimal salesPriceModifier,
     BigDecimal salePrice,
     Integer quantityOnHand,
     LocalDateTime lastUpdated,
