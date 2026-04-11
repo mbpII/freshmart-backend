@@ -22,6 +22,8 @@ import java.util.List;
 @Tag(name = "Products", description = "Product catalog management")
 public class ProductController {
     
+    private static final Long DEFAULT_STORE_ID = 101L;
+
     private final ProductService productService;
     private final InventoryService inventoryService;
     
@@ -32,34 +34,23 @@ public class ProductController {
     
     @PostMapping
     @Operation(summary = "Create a new product with initial inventory")
-    public ResponseEntity<ProductInventoryResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
-        ProductRequest productRequest = new ProductRequest(
-            request.productName(),
-            request.category(),
-            request.upc(),
-            request.supplierId(),
-            request.unitCost(),
-            request.retailPrice(),
-            request.isFood(),
-            request.reorderThreshold(),
-            request.reorderQuantity(),
-            request.expirationDate()
-        );
-        
-        ProductResponse productResponse = productService.createProduct(productRequest);
-        
-        Long storeId = request.storeId() != null ? request.storeId() : 101L;
-        Integer initialQty = request.initialQuantity() != null ? request.initialQuantity() : 0;
-        
-        InventoryRequest inventoryRequest = new InventoryRequest(
-            productResponse.productId(),
-            initialQty
-        );
+    public ResponseEntity<ProductInventoryResponse> createProduct(
+            @Valid @RequestBody CreateProductRequest request) {
+
+        var productRequest = toProductRequest(request);
+        var productResponse = productService.createProduct(productRequest);
+
+        // TODO: replace with CurrentUserService when auth is implemented
+        var storeId = request.storeId() != null ? request.storeId() : DEFAULT_STORE_ID;
+        var initialQty = request.initialQuantity() != null ? request.initialQuantity() : 0;
+
+        var inventoryRequest = new InventoryRequest(productResponse.productId(), initialQty);
         inventoryService.addToInventory(storeId, inventoryRequest);
-        
-        ProductInventoryResponse response = inventoryService.getProductInventory(
-            productResponse.productId(), storeId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        var inventoryResponse =
+                inventoryService.getProductInventory(productResponse.productId(), storeId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(inventoryResponse);
     }
     
     @GetMapping("/{id}")
@@ -89,15 +80,16 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
     
+    // User-facing delete action is implemented as a soft archive in inventory for Epic 1.
+    // This does not remove the product record globally.
     @DeleteMapping("/{id}")
     @Operation(summary = "Archive product (soft delete)")
     public ResponseEntity<Void> archiveProduct(
             @PathVariable Long id,
             @Parameter(description = "Store ID") @RequestParam(required = false) Long storeId) {
-        if (storeId == null) {
-            storeId = 101L;
-        }
-        inventoryService.archiveFromStore(id, storeId);
+        // TODO: replace with CurrentUserService when auth is implemented
+        var storeIdToUse = storeId != null ? storeId : DEFAULT_STORE_ID;
+        inventoryService.archiveFromStore(id, storeIdToUse);
         return ResponseEntity.noContent().build();
     }
     
@@ -120,5 +112,20 @@ public class ProductController {
         productService.removeSale(id);
         ProductInventoryResponse response = inventoryService.getProductInventory(id, storeId);
         return ResponseEntity.ok(response);
+    }
+
+    private ProductRequest toProductRequest(CreateProductRequest request) {
+        return new ProductRequest(
+            request.productName(),
+            request.category(),
+            request.upc(),
+            request.supplierId(),
+            request.unitCost(),
+            request.retailPrice(),
+            request.isFood(),
+            request.reorderThreshold(),
+            request.reorderQuantity(),
+            request.expirationDate()
+        );
     }
 }

@@ -32,12 +32,12 @@ public class InventoryService {
     private final ApplicationEventPublisher eventPublisher;
     
     public InventoryService(InventoryRepository inventoryRepository,
-                           StoreRepository storeRepository,
-                           ProductService productService,
-                           CurrentUserService currentUserService,
-                           InventoryMapper inventoryMapper,
-                           ProductInventoryMapper productInventoryMapper,
-                           ApplicationEventPublisher eventPublisher) {
+                   StoreRepository storeRepository,
+                   ProductService productService,
+                   CurrentUserService currentUserService,
+                   InventoryMapper inventoryMapper,
+                   ProductInventoryMapper productInventoryMapper,
+                   ApplicationEventPublisher eventPublisher) {
         this.inventoryRepository = inventoryRepository;
         this.storeRepository = storeRepository;
         this.productService = productService;
@@ -97,6 +97,7 @@ public class InventoryService {
     }
     
     @Transactional
+    // Soft archive only: marks the store inventory record inactive without deleting the product globally.
     public void archiveFromStore(Long productId, Long storeId) {
         Inventory inventory = inventoryRepository.findByProductProductIdAndStoreStoreIdAndIsActiveTrue(productId, storeId)
             .orElseThrow(() -> new InventoryNotFoundException(
@@ -114,7 +115,8 @@ public class InventoryService {
         
         int newQuantity = inventory.getQuantityOnHand() + quantityChange;
         if (newQuantity < 0) {
-            throw new IllegalArgumentException("Insufficient inventory. Current: " + inventory.getQuantityOnHand() + ", attempted change: " + quantityChange);
+            throw new IllegalArgumentException("Insufficient inventory. Current: " + inventory.getQuantityOnHand() +
+                ", attempted change: " + quantityChange);
         }
         
         inventory.setQuantityOnHand(newQuantity);
