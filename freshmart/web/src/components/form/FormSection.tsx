@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Props = {
   title: string;
@@ -7,11 +8,11 @@ type Props = {
 
 export function FormSection({ title, children }: Props) {
   return (
-    <div className="card">
-      <div className="card-header">
-        <h3 className="font-semibold">{title}</h3>
-      </div>
-      <div className="card-body space-y-4">{children}</div>
-    </div>
+    <Card size="sm">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">{children}</CardContent>
+    </Card>
   );
 }

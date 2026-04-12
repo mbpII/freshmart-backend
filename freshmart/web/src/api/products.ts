@@ -10,16 +10,31 @@ const API_BASE = "/api";
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || `HTTP ${response.status}`);
+    const rawError = await response.text();
+
+    let parsedMessage = "";
+    try {
+      const parsed = JSON.parse(rawError) as { message?: string };
+      parsedMessage = parsed.message ?? "";
+      console.error("API validation error:", parsed);
+    } catch {
+      parsedMessage = rawError;
+      console.error("API error response:", rawError);
+    }
+
+    if (parsedMessage.includes("Insufficient inventory")) {
+      throw new Error("Cannot complete sell, insufficient inventory");
+    }
+
+    throw new Error(parsedMessage || `HTTP ${response.status}`);
   }
   return response.json();
 }
 
 function mapProductFromApi(data: Record<string, unknown>): Product {
   return {
-    productId: data.productId as number,
-    storeId: data.storeId as number,
+    productId: Number(data.productId),
+    storeId: Number(data.storeId),
     productName: data.productName as string,
     category: data.category as string,
     upc: data.upc as string,
@@ -30,14 +45,16 @@ function mapProductFromApi(data: Record<string, unknown>): Product {
     salesPriceModifier:
       data.salesPriceModifier != null ? Number(data.salesPriceModifier) : undefined,
     salePrice: data.salePrice != null ? Number(data.salePrice) : undefined,
-    quantityOnHand: data.quantityOnHand as number,
+    quantityOnHand: Number(data.quantityOnHand),
     lastUpdated: data.lastUpdated as string,
     isFood: data.isFood as boolean,
     isActive: data.isActive as boolean,
     expirationDate: data.expirationDate as string | undefined,
-    reorderThreshold: data.reorderThreshold as number | undefined,
-    reorderQuantity: data.reorderQuantity as number | undefined,
-    inventoryId: data.inventoryId as number | undefined,
+    reorderThreshold:
+      data.reorderThreshold != null ? Number(data.reorderThreshold) : undefined,
+    reorderQuantity:
+      data.reorderQuantity != null ? Number(data.reorderQuantity) : undefined,
+    inventoryId: data.inventoryId != null ? Number(data.inventoryId) : undefined,
   };
 }
 
@@ -45,7 +62,7 @@ function mapProductCatalogFromApi(
   data: Record<string, unknown>,
 ): ProductCatalog {
   return {
-    productId: data.productId as number,
+    productId: Number(data.productId),
     productName: data.productName as string,
     category: data.category as string,
     upc: data.upc as string,
@@ -57,8 +74,10 @@ function mapProductCatalogFromApi(
       data.salesPriceModifier != null ? Number(data.salesPriceModifier) : undefined,
     salePrice: data.salePrice != null ? Number(data.salePrice) : undefined,
     isFood: data.isFood as boolean,
-    reorderThreshold: data.reorderThreshold as number | undefined,
-    reorderQuantity: data.reorderQuantity as number | undefined,
+    reorderThreshold:
+      data.reorderThreshold != null ? Number(data.reorderThreshold) : undefined,
+    reorderQuantity:
+      data.reorderQuantity != null ? Number(data.reorderQuantity) : undefined,
     expirationDate: data.expirationDate as string | undefined,
     isActive: data.isActive as boolean,
   };
