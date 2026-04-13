@@ -165,24 +165,6 @@ export const productApi = {
     return mapProductFromApi(responseData);
   },
 
-  sellStock: async (
-    id: number,
-    quantityChange: number,
-    notes: string,
-    storeId: number = DEFAULT_STORE_ID,
-  ): Promise<Product> => {
-    const res = await fetch(
-      `${API_BASE}/stores/${storeId}/inventory/${id}/sell`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantityChange, notes }),
-      },
-    );
-    const responseData = await handleResponse<Record<string, unknown>>(res);
-    return mapProductFromApi(responseData);
-  },
-
   adjustStock: async (
     id: number,
     quantityChange: number,
