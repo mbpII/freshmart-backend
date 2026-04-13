@@ -89,16 +89,6 @@ export function useReceiveStock() {
   });
 }
 
-export function useSellStock() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ productId, quantityChange, notes }: StockMutationInput) =>
-      productApi.sellStock(productId, quantityChange, notes),
-    onSuccess: (_, { productId }) => invalidateProductQueries(qc, productId),
-  });
-}
-
 export function useAdjustStock() {
   const qc = useQueryClient();
 

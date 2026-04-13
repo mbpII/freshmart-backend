@@ -6,17 +6,21 @@ import { FormSection } from '../../components/form/FormSection';
 import { InputField } from '../../components/form/InputField';
 import { RadioGroupField } from '../../components/form/RadioGroupField';
 import { SelectField } from '../../components/form/SelectField';
+import { Button } from '@/components/ui/button';
 import productFormConfig from '../../data/product-form.json';
-import { useCreateProduct, useProduct, useUpdateProduct } from '../../hooks/useProducts';
-import { buildCreateProductInput, buildProductFormDefaults, buildUpdateProductInput } from '../../lib/productForm';
+import { useCreateProduct, useMarkOnSale, useProduct, useUpdateProduct } from '../../hooks/useProducts';
+import { buildCreateProductInput, buildProductFormDefaults, buildUpdateProductInput, computeSaleModifier } from '../../lib/productForm';
+import { useDevMode } from '@/lib/dev-mode';
 import { productFormSchema } from '../../lib/validation';
 import type { ProductFormConfig, ProductFormData, ProductType } from '../../types/product';
 
 const { categories, defaults } = productFormConfig as ProductFormConfig;
-
-function isManager() {
-  return false;
-}
+const defaultFormValues: ProductFormData = {
+  ...defaults,
+  isOnSale: false,
+  saleMode: 'price',
+  saleValue: '',
+};
 
 const categoryOptions = categories.map((category) => ({ label: category, value: category }));
 const productTypeOptions: { label: string; value: ProductType }[] = [
@@ -24,15 +28,16 @@ const productTypeOptions: { label: string; value: ProductType }[] = [
   { label: 'Non-Food', value: 'non-food' },
 ];
 
-export default function ProductForm() {
+export default function ProductEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const productId = Number(id);
   const isEditMode = Number.isFinite(productId) && productId > 0;
   const createProduct = useCreateProduct();
+  const markOnSale = useMarkOnSale();
   const updateProduct = useUpdateProduct();
   const { data: product, isLoading: isLoadingProduct } = useProduct(productId);
-  const canManageSales = isManager();
+  const { isManager } = useDevMode();
 
   const {
     register,
@@ -43,10 +48,12 @@ export default function ProductForm() {
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
-    defaultValues: defaults,
+    defaultValues: defaultFormValues,
   });
 
   const productType = watch('productType');
+  const isOnSale = watch('isOnSale');
+  const saleMode = watch('saleMode');
 
   useEffect(() => {
     if (isEditMode && product) {
@@ -54,17 +61,41 @@ export default function ProductForm() {
     }
   }, [isEditMode, product, reset]);
 
-  const onSubmit = (values: ProductFormData) => {
+  const onSubmit = async (values: ProductFormData) => {
     if (isEditMode) {
       updateProduct.mutate(
         { id: productId, data: buildUpdateProductInput(values) },
-        { onSuccess: () => navigate(`/products/${productId}`) },
+        {
+          onSuccess: async () => {
+            if (isManager && values.isOnSale) {
+              const modifier = computeSaleModifier(values);
+              if (modifier) {
+                await markOnSale.mutateAsync({
+                  productId,
+                  salesPriceModifier: modifier,
+                });
+              }
+            }
+            navigate(`/products/${productId}`);
+          },
+        },
       );
       return;
     }
 
     createProduct.mutate(buildCreateProductInput(values), {
-      onSuccess: () => navigate('/'),
+      onSuccess: async (created) => {
+        if (isManager && values.isOnSale) {
+          const modifier = computeSaleModifier(values);
+          if (modifier) {
+            await markOnSale.mutateAsync({
+              productId: created.productId,
+              salesPriceModifier: modifier,
+            });
+          }
+        }
+        navigate('/');
+      },
     });
   };
 
@@ -103,6 +134,7 @@ export default function ProductForm() {
             <InputField
               label="UPC *"
               placeholder="Enter UPC code"
+              maxLength={13}
               registration={register('upc')}
               error={errors.upc?.message}
             />
@@ -182,33 +214,77 @@ export default function ProductForm() {
         )}
 
         <FormSection title="Price Setup">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <InputField
-              label="Unit Cost"
-              type="number"
-              min={0}
-              step="0.01"
-              placeholder="0.00"
-              registration={register('unitCost', {
-                setValueAs: (value) => (value === '' ? undefined : Number(value)),
-              })}
-              className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-              error={errors.unitCost?.message}
-            />
+          <InputField
+            label="Retail Price *"
+            type="number"
+            min={0}
+            step="0.01"
+            placeholder="0.00"
+            registration={register('retailPrice', { valueAsNumber: true })}
+            className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            error={errors.retailPrice?.message}
+          />
 
-            <InputField
-              label="Retail Price *"
-              type="number"
-              min={0}
-              step="0.01"
-              placeholder="0.00"
-              registration={register('retailPrice', { valueAsNumber: true })}
-              className="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-              error={errors.retailPrice?.message}
-            />
-          </div>
+          {isManager ? (
+            <div className="rounded border border-gray-200 bg-gray-50 p-4 space-y-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={isOnSale}
+                  onChange={(e) => {
+                    setValue('isOnSale', e.target.checked, { shouldValidate: true });
+                    if (!e.target.checked) setValue('saleValue', '');
+                  }}
+                  className="size-4 accent-primary"
+                />
+                Mark as on sale
+              </label>
 
-          {!canManageSales && (
+              {isOnSale && (
+                <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto_1fr] sm:items-end">
+                  <label className="text-sm font-medium">Sale Price</label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-gray-500">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      disabled={saleMode !== 'price'}
+                      value={saleMode === 'price' ? watch('saleValue') : ''}
+                      onChange={(e) => {
+                        setValue('saleMode', 'price', { shouldValidate: true });
+                        setValue('saleValue', e.target.value, { shouldValidate: true });
+                      }}
+                      className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <span className="text-sm text-gray-500">or</span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="10"
+                      disabled={saleMode !== 'percent'}
+                      value={saleMode === 'percent' ? watch('saleValue') : ''}
+                      onChange={(e) => {
+                        setValue('saleMode', 'percent', { shouldValidate: true });
+                        setValue('saleValue', e.target.value, { shouldValidate: true });
+                      }}
+                      className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <span className="text-sm text-gray-500">%</span>
+                  </div>
+                </div>
+              )}
+
+              {errors.saleValue?.message && (
+                <p className="text-sm text-red-600">{errors.saleValue.message}</p>
+              )}
+            </div>
+          ) : (
             <p className="text-xs text-gray-500">Sale controls are manager-only and currently hidden.</p>
           )}
         </FormSection>
@@ -222,10 +298,9 @@ export default function ProductForm() {
         )}
 
         <div className="flex gap-3 pt-4">
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting || createProduct.isPending || updateProduct.isPending}
-            className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isEditMode
               ? updateProduct.isPending
@@ -234,10 +309,10 @@ export default function ProductForm() {
               : createProduct.isPending
                 ? 'Creating...'
                 : 'Add to Inventory'}
-          </button>
-          <Link to="/" className="btn-secondary">
+          </Button>
+          <Button variant="outline" render={<Link to="/" />}>
             Cancel
-          </Link>
+          </Button>
         </div>
       </form>
     </div>

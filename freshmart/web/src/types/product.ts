@@ -64,16 +64,22 @@ export type ProductFormData = Pick<
   Product,
   'productName' | 'category' | 'upc' | 'quantityOnHand' | 'retailPrice'
 > & {
-  unitCost?: number;
   reorderQuantity: number;
   productType: ProductType;
   reorderThreshold: number;
   expirationDate: string;
+  isOnSale: boolean;
+  saleMode: 'price' | 'percent';
+  saleValue: string;
 };
 
 export type ProductFormErrors = Partial<Record<keyof ProductFormData | 'sale', string>>;
 
 export type ProductFormConfig = {
   categories: string[];
-  defaults: ProductFormData;
+  defaults: Omit<ProductFormData, 'isOnSale' | 'saleMode' | 'saleValue'> & {
+    isOnSale?: boolean;
+    saleMode?: 'price' | 'percent';
+    saleValue?: string;
+  };
 };

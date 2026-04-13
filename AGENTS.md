@@ -1,147 +1,99 @@
 # AGENTS.md — FreshMart Portfolio
 
-## Project Overview
-Inventory management system for a grocery chain. Two services under `freshmart/`:
-- **api/** — Spring Boot 3.2 (Java 17, Maven)
-- **web/** — React 19 + TypeScript + Vite + Tailwind 4
+## Project Structure
 
-PostgreSQL 16 runs via `docker-compose.yml` (also orchestrates api + adminer).
+Two-service monorepo under `freshmart/`:
+- **api/** — Spring Boot 3.2 / Java 17 / Maven
+- **web/** — React 19 / TypeScript / Vite 6 / Tailwind 4
+
+PostgreSQL 16 via `docker-compose.yml` (also builds api image + adminer).
 
 ## Developer Commands
 
-### Infrastructure
 ```bash
-docker compose up -d          # starts postgres (port 5432), api (8080), adminer (8081)
-docker compose down           # stop all
-```
+# Infrastructure (from repo root)
+docker compose up -d          # postgres:5432, api:8080, adminer:8081
+docker compose down
 
-### API (`freshmart/api/`)
-```bash
-mvn spring-boot:run           # run dev server on :8080 (use mvn, not ./mvnw)
-mvn clean compile             # build (MapStruct requires Maven)
-mvn clean package             # build jar (skips tests)
-mvn test                      # run tests
-```
-- Swagger UI at `http://localhost:8080/swagger-ui.html`
-- Uses Flyway migrations in `src/main/resources/db/migration/`
-- `hibernate.ddl-auto: validate` — schema must match migrations; do not rely on auto-DDL
-- MapStruct annotation processor required — always build with Maven, not IDE-only compile
+# API (from freshmart/api/)
+mvn spring-boot:run           # dev server on :8080
+mvn clean compile             # build (MapStruct needs Maven annotation processing)
+mvn clean package -DskipTests # build jar without tests
+mvn test                      # run tests (needs docker for testcontainers)
 
-### Web (`freshmart/web/`)
-```bash
-npm run dev                   # Vite dev server
+# Web (from freshmart/web/)
+npm run dev                   # Vite dev server on :5173 (proxies /api → :8080)
 npm run build                 # tsc -b && vite build
 npm run lint                  # eslint
-npm run preview               # preview production build
 ```
-- Routes: `/` (product list), `/products/:id` (detail), `/products/new` (create), `/products/:id/edit` (edit)
-- State: React Query (staleTime 30s, no refetch on focus)
-- Forms: React Hook Form + Zod validation
-- Tailwind 4 — no `tailwind.config.js`; config via CSS
 
-## Architecture Notes
-- API entrypoint: `com.freshmart` package under `src/main/java/com/`
-- Web entrypoint: `src/main.tsx` → `src/App.tsx`
-- No `test/` directory exists in the API — tests have not been written yet
-- No CI/CD pipeline configured
-- `knowledge-repo/` contains exercise docs and wireframes (reference only, not code)
+**Always run `mvn clean compile` after changing MapStruct mappers** — IDE-only compile skips annotation processing and generated impl classes will be stale or missing.
 
-### Backend Structure (EPIC-01)
+## Architecture Gotchas
+
+- **No `./mvnw`** — use system `mvn`
+- **`hibernate.ddl-auto: validate`** — schema is managed entirely by Flyway migrations (`src/main/resources/db/migration/`). Never rely on auto-DDL; always write a migration.
+- **Web path alias**: `@` maps to `src/` (configured in `vite.config.ts`)
+- **Vite proxies `/api` to `localhost:8080`** in dev, so frontend API calls use relative paths
+- **Auth is a stub** — `CurrentUserService` hardcodes user `manager_downtown` (store 101). Frontend hardcodes `DEFAULT_STORE_ID = 101`.
+- **Product creation is two-step**: `POST /api/products` creates the catalog entry (with optional `initialQuantity` + `storeId`), then `POST /api/stores/{storeId}/inventory/{productId}/receive` adds stock to a specific store.
+- **Soft delete** on inventory only (`inventory.is_active = false`), not on the global product.
+- **Sale state is scoped per-store**: `inventory.sales_price_modifier` field, not a product-level flag.
+
+## Spring Profiles
+
+- Default (no profile): connects to `localhost:5432` — for local `mvn spring-boot:run`
+- `docker`: connects to `postgres:5432` inside docker network
+- `prod`: reads `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD` from env
+
+## Web Stack Notes
+
+- **Tailwind 4** — no `tailwind.config.js`; all config is in CSS (`@theme` directive)
+- **React Query** — 30s staleTime, no refetchOnWindowFocus (set in `App.tsx` queryClient)
+- **React Hook Form + Zod** for form validation
+- **React Router v7** with file-based routes under `src/routes/`
+- **No test framework** configured in web — don't assume Jest/Vitest exists
+- **No test directory** in API either — tests have not been written yet
+- `INVENTORY_PAGE_SIZE = 5` — pagination is client-side with `@tanstack/react-table`
+
+## Backend Package Layout
+
 ```
 com.freshmart/
-├── controller/    # REST endpoints
-├── service/       # Business logic (CurrentUserService stub for auth)
-├── repository/    # JPA repositories
+├── controller/    # REST endpoints (Product, Inventory, Store)
+├── service/       # Business logic (CurrentUserService is auth stub)
+├── repository/   # Spring Data JPA
 ├── dto/           # Request/response records
-├── mapper/        # MapStruct converters
-├── event/         # Domain events (InventoryAdjustedEvent)
-├── exception/     # Global exception handler
-├── config/        # OpenAPI, CORS, Web config
-└── model/         # JPA entities
+├── mapper/        # MapStruct (ProductMapper, InventoryMapper, ProductInventoryMapper)
+├── event/         # InventoryAdjustedEvent + @TransactionalEventListener
+├── exception/     # GlobalExceptionHandler (@RestControllerAdvice)
+├── config/        # CORS (allows :5173, :3000), OpenAPI, Web config
+└── model/         # JPA entities (Product, Inventory, Store, User, Transaction, Supplier)
 ```
 
-### Key Design Decisions
-- **Product Creation**: Two separate endpoints — `POST /api/products` (catalog) + `POST /api/stores/{storeId}/inventory` (store linkage)
-- **Soft Delete**: `inventory.is_active=false` (per-store only, no global side effects)
-- **Transaction Recording**: Automatic via `InventoryAdjustedEvent` + `@TransactionalEventListener`
-- **Response Format**: Standard REST (HTTP status codes, direct resource bodies)
-- **Store ID**: Derived from authenticated user (stub: `manager_downtown` with store 101)
-- **DTO Structure**: Flat `ProductInventoryResponse` (serves frontend needs)
+## Database
 
-## Conventions
-- API: Spring profiles `dev`, `docker`, `prod`. Default profile connects to `localhost:5432`
-- Web: No test framework configured — do not assume Jest/Vitest exists
+- PostgreSQL 16, credentials: `freshmart/freshmart`, database: `freshmart`
+- 7 Flyway migrations (V1–V7), baseline-on-migrate enabled
+- Schema: `products`, `inventory`, `stores`, `users`, `suppliers`, `transactions`, `alerts`
+- Seed data in V2 (stores) and V4 (users)
 
-## Current Task Plan
+## API Endpoints
 
-### EPIC-01: Core Functionality ✅ COMPLETE
-- [x] **Start database** — `docker compose up -d` to spin up PostgreSQL
-- [x] **Create Repositories** — JPA repositories for all entities
-- [x] **Create Domain Events** — `InventoryAdjustedEvent` for transaction audit
-- [x] **Create DTOs** — Request/response records for all endpoints
-- [x] **Create Mappers** — MapStruct for entity/DTO conversion
-- [x] **Create Services** — Product, Inventory, TransactionRecording, CurrentUser (stub)
-- [x] **Create Controllers** — REST endpoints for products, inventory, stores
-- [x] **Create Exception Handler** — Global @RestControllerAdvice
-- [x] **Scope sale state per store** — persist sale modifier on `inventory`
-- [x] **Finish frontend create/edit/detail flows** — create, edit, remove, stock movement, sale apply/remove
-- [x] **Verify builds** — `mvn clean compile -DskipTests` and `npm run build` succeed
-
-### API Endpoints
-
-**Products (Epic 1 - Complete)**
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/products` | Create product with optional initial inventory |
-| GET | `/api/products` | List products for store |
-| GET | `/api/products/{id}` | Get product details |
+| POST | `/api/products` | Create product (with optional `initialQuantity` + `storeId`) |
+| GET | `/api/products?storeId={id}` | List products for store |
+| GET | `/api/products/{id}` | Get product catalog info |
 | PUT | `/api/products/{id}` | Update product |
 | DELETE | `/api/products/{id}` | Archive product (soft delete) |
-| POST | `/api/products/{id}/sale` | Mark product on sale |
-| DELETE | `/api/products/{id}/sale` | Remove sale |
-
-**Inventory (Used by Epic 1 flows)**
-| Method | Endpoint | Description |
-|--------|----------|-------------|
+| POST | `/api/products/{id}/sale?storeId=&salesPriceModifier=` | Mark on sale per-store |
+| DELETE | `/api/products/{id}/sale?storeId=` | Remove sale per-store |
 | GET | `/api/stores/{storeId}/inventory` | Get store inventory |
-| DELETE | `/api/stores/{storeId}/inventory/{productId}` | Remove from store |
+| GET | `/api/stores/{storeId}/inventory/{productId}` | Get single item detail |
+| DELETE | `/api/stores/{storeId}/inventory/{productId}` | Remove from store (soft delete) |
 | POST | `/api/stores/{storeId}/inventory/{productId}/receive` | Receive stock |
 | POST | `/api/stores/{storeId}/inventory/{productId}/sell` | Sell stock |
 | POST | `/api/stores/{storeId}/inventory/{productId}/adjust` | Adjust stock |
 
-### Architecture Note
-- **Product is the main resource** - Inventory behavior attaches to products
-- **Stock changes** are explicit and auditable (full implementation in Epic 3)
-- **Initial stock** can be set during product creation via `initialQuantity` field
-
-## Implementation Plan
-
-### Phase 1: Wire Frontend to Real API ✅
-- [x] Update `src/api/products.ts` to use `/api/*` endpoints
-- [x] Align frontend types with backend DTOs for catalog and inventory responses
-- [x] Use `POST /api/products` for product creation with initial inventory
-- [x] Update React Query hooks with mutation invalidation for list/detail refresh
-- [x] Reuse the product form for edit flow with pre-populated data
-- [x] Add inline API error display on create/edit/detail actions
-
-### Phase 2: Pretty Colors / UI Improvements
-- [ ] Replace grayscale theme with fresh grocery palette:
-  - Primary: emerald/slate (fresh feel)
-  - Food items: warm amber accents
-  - Status badges: semantic colors (red=expired/low, yellow=warning, green=success)
-- [ ] Add smooth transitions and hover states to all interactive elements
-- [ ] Improve table styling with zebra striping and better typography hierarchy
-- [ ] Replace loading text with skeleton placeholders
-- [ ] Add card shadows and rounded corners for visual depth
-
-### Phase 3: Performance Testing & Optimization
-- [ ] Add Lighthouse CI configuration for automated performance audits
-- [ ] Implement virtual scrolling for large inventory lists using `react-window`
-- [ ] Optimize React re-renders with `React.memo` and `useMemo` where needed
-- [ ] Add performance budgets: initial bundle <200KB, API response <500ms
-- [ ] Enable React Query stale-while-revalidate patterns for perceived speed
-
-### Future
-- [ ] Implement authentication (replace CurrentUserService stub)
-- [ ] Write integration tests for API endpoints
-- [ ] Review and simplify temporary frontend form/detail components during UI polish
+Swagger UI: `http://localhost:8080/swagger-ui.html`
