@@ -1,0 +1,36 @@
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+
+# MapStruct generated implementations
+**/mapper/*Impl.java
