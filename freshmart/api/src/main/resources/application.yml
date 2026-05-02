@@ -45,18 +45,6 @@ logging:
 spring:
   config:
     activate:
-      on-profile: dev
-  
-  jpa:
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-
----
-spring:
-  config:
-    activate:
       on-profile: docker
   
   datasource:
@@ -70,11 +58,6 @@ spring:
       hibernate:
         format_sql: true
   
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-
 ---
 spring:
   config:

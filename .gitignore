@@ -1,3 +1,9 @@
-*.txt
+target/
+dist/
+node_modules/
+logs/
+*.log
+*.pid
 .DS_Store
 ~$*
+*.txt
