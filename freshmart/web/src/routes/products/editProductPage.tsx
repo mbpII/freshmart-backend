@@ -63,7 +63,15 @@ function ProductEditorForm({
     navigate(isEditMode ? `/products/${productId}` : '/');
   };
 
-  const { submit, isPending, error } = useProductEditor({
+  const hasExistingSale = isEditMode && defaultValues.isOnSale;
+  const currentSalePrice = hasExistingSale && defaultValues.saleValue
+    ? Number(defaultValues.saleValue)
+    : null;
+  const formDefaultValues = hasExistingSale
+    ? { ...defaultValues, isOnSale: false, saleValue: '' }
+    : defaultValues;
+
+  const { submit, removeCurrentSale, isPending, error } = useProductEditor({
     productId,
     storeId,
     isEditMode,
@@ -80,7 +88,7 @@ function ProductEditorForm({
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
-    defaultValues,
+    defaultValues: formDefaultValues,
   });
 
   const productType = watch('productType');
@@ -203,61 +211,87 @@ function ProductEditorForm({
 
         {isManager ? (
           <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4">
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input
-                type="checkbox"
-                checked={isOnSale}
-                onChange={(e) => {
-                  setValue('isOnSale', e.target.checked, { shouldValidate: true });
-                  if (!e.target.checked) setValue('saleValue', '');
-                }}
-                className="size-4 accent-primary"
-              />
-              Mark as on sale
-            </label>
-
-            {isOnSale && (
-              <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto_1fr] sm:items-end">
-                <label className="text-sm font-medium">Sale Price</label>
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-muted-foreground">$</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    disabled={saleMode !== 'price'}
-                    value={saleMode === 'price' ? saleValue : ''}
-                    onChange={(e) => {
-                      setValue('saleMode', 'price', { shouldValidate: true });
-                      setValue('saleValue', e.target.value, { shouldValidate: true });
-                    }}
-                    className={`${inputClassName} text-sm disabled:cursor-not-allowed disabled:opacity-50`}
-                  />
+            {hasExistingSale ? (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium">Current sale</p>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="line-through">
+                      ${defaultValues.retailPrice.toFixed(2)}
+                    </span>{' '}
+                    <span className="font-semibold text-foreground">
+                      ${currentSalePrice?.toFixed(2) ?? defaultValues.saleValue}
+                    </span>
+                  </p>
                 </div>
-                <span className="text-sm text-muted-foreground">or</span>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    placeholder="10"
-                    disabled={saleMode !== 'percent'}
-                    value={saleMode === 'percent' ? saleValue : ''}
-                    onChange={(e) => {
-                      setValue('saleMode', 'percent', { shouldValidate: true });
-                      setValue('saleValue', e.target.value, { shouldValidate: true });
-                    }}
-                    className={`${inputClassName} text-sm disabled:cursor-not-allowed disabled:opacity-50`}
-                  />
-                  <span className="text-sm text-muted-foreground">%</span>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={removeCurrentSale}
+                  disabled={isPending}
+                >
+                  Remove Sale
+                </Button>
               </div>
-            )}
+            ) : (
+              <>
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={isOnSale}
+                    onChange={(e) => {
+                      setValue('isOnSale', e.target.checked, { shouldValidate: true });
+                      if (!e.target.checked) setValue('saleValue', '');
+                    }}
+                    className="size-4 accent-primary"
+                  />
+                  Mark as on sale
+                </label>
 
-            {errors.saleValue?.message && (
-              <p className="text-sm text-destructive">{errors.saleValue.message}</p>
+                {isOnSale && (
+                  <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto_1fr] sm:items-end">
+                    <label className="text-sm font-medium">Sale Price</label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-muted-foreground">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        disabled={saleMode !== 'price'}
+                        value={saleMode === 'price' ? saleValue : ''}
+                        onChange={(e) => {
+                          setValue('saleMode', 'price', { shouldValidate: true });
+                          setValue('saleValue', e.target.value, { shouldValidate: true });
+                        }}
+                        className={`${inputClassName} text-sm disabled:cursor-not-allowed disabled:opacity-50`}
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground">or</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        placeholder="10"
+                        disabled={saleMode !== 'percent'}
+                        value={saleMode === 'percent' ? saleValue : ''}
+                        onChange={(e) => {
+                          setValue('saleMode', 'percent', { shouldValidate: true });
+                          setValue('saleValue', e.target.value, { shouldValidate: true });
+                        }}
+                        className={`${inputClassName} text-sm disabled:cursor-not-allowed disabled:opacity-50`}
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                )}
+
+                {errors.saleValue?.message && (
+                  <p className="text-sm text-destructive">{errors.saleValue.message}</p>
+                )}
+              </>
             )}
           </div>
         ) : (

@@ -3,6 +3,7 @@ import type { NavigateFunction } from 'react-router-dom';
 import {
   useCreateProduct,
   useMarkOnSale,
+  useRemoveSale,
   useUpdateProduct,
 } from './useProducts';
 import {
@@ -35,10 +36,14 @@ export function useProductEditor({
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const markOnSale = useMarkOnSale();
+  const removeSale = useRemoveSale();
   const [saleError, setSaleError] = useState<Error | null>(null);
 
   const isPending =
-    createProduct.isPending || updateProduct.isPending || markOnSale.isPending;
+    createProduct.isPending ||
+    updateProduct.isPending ||
+    markOnSale.isPending ||
+    removeSale.isPending;
   const mutationError = (isEditMode ? updateProduct.error : createProduct.error) as
     | Error
     | null;
@@ -50,6 +55,14 @@ export function useProductEditor({
     if (!Number.isFinite(raw) || raw <= 0) return;
     const mode = values.saleMode === 'price' ? 'flat' : 'percent';
     await markOnSale.mutateAsync({ productId: id, storeId, mode, value: raw });
+  };
+
+  const removeCurrentSale = (): void => {
+    if (!isManager || !isEditMode) return;
+    setSaleError(null);
+    removeSale.mutate({ productId, storeId }, {
+      onError: (err) => setSaleError(err as Error),
+    });
   };
 
   const submit = (values: ProductFormData): void => {
@@ -90,5 +103,5 @@ export function useProductEditor({
     });
   };
 
-  return { submit, isPending, error };
+  return { submit, removeCurrentSale, isPending, error };
 }
