@@ -13,6 +13,7 @@ import type { ProductFormData } from '../types/product';
 
 type UseProductEditorOptions = {
   productId: number;
+  storeId: number;
   isEditMode: boolean;
   isManager: boolean;
   navigate: NavigateFunction;
@@ -25,6 +26,7 @@ type UseProductEditorOptions = {
  */
 export function useProductEditor({
   productId,
+  storeId,
   isEditMode,
   isManager,
   navigate,
@@ -47,7 +49,7 @@ export function useProductEditor({
     const raw = parseFloat(values.saleValue);
     if (!Number.isFinite(raw) || raw <= 0) return;
     const mode = values.saleMode === 'price' ? 'flat' : 'percent';
-    await markOnSale.mutateAsync({ productId: id, mode, value: raw });
+    await markOnSale.mutateAsync({ productId: id, storeId, mode, value: raw });
   };
 
   const submit = (values: ProductFormData): void => {
@@ -55,7 +57,7 @@ export function useProductEditor({
 
     if (isEditMode) {
       updateProduct.mutate(
-        { id: productId, data: buildUpdateProductInput(values) },
+        { id: productId, storeId, data: buildUpdateProductInput(values) },
         {
           onSuccess: async () => {
             try {
@@ -75,7 +77,7 @@ export function useProductEditor({
       return;
     }
 
-    createProduct.mutate(buildCreateProductInput(values), {
+    createProduct.mutate(buildCreateProductInput(values, storeId), {
       onSuccess: async (created) => {
         try {
           await applyMarkOnSale(created.productId, values);

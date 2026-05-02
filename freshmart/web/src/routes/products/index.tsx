@@ -37,6 +37,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import productFormConfig from '@/data/product-form.json';
 import type { ProductFormConfig } from '@/types/product';
+import { useDevModeStore } from '@/stores/dev-mode';
 
 const categories = (productFormConfig as ProductFormConfig).categories;
 
@@ -94,7 +95,10 @@ const columns: ColumnDef<Product>[] = [
 ];
 
 export default function ProductsIndex() {
-  const { data: products, isLoading, error } = useProducts();
+  const selectedStoreId = useDevModeStore((state) => state.selectedStoreId);
+  const stores = useDevModeStore((state) => state.stores);
+  const selectedStore = stores.find((store) => store.storeId === selectedStoreId);
+  const { data: products, isLoading, error } = useProducts(selectedStoreId);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,6 +132,10 @@ export default function ProductsIndex() {
 
   return (
     <div className="p-4 space-y-3">
+      <div className="text-sm text-muted-foreground">
+        Store {selectedStoreId}
+        {selectedStore ? ` · ${selectedStore.storeName}` : ''}
+      </div>
       <div className="flex items-center gap-3">
         <Input
           placeholder="Search products..."

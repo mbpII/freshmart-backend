@@ -41,6 +41,7 @@ const inputClassName =
 type ProductEditorFormProps = {
   isEditMode: boolean;
   productId: number;
+  storeId: number;
   defaultValues: ProductFormData;
   isManager: boolean;
 };
@@ -48,6 +49,7 @@ type ProductEditorFormProps = {
 function ProductEditorForm({
   isEditMode,
   productId,
+  storeId,
   defaultValues,
   isManager,
 }: ProductEditorFormProps) {
@@ -63,6 +65,7 @@ function ProductEditorForm({
 
   const { submit, isPending, error } = useProductEditor({
     productId,
+    storeId,
     isEditMode,
     isManager,
     navigate,
@@ -292,7 +295,8 @@ export default function ProductEditorPage() {
   const { id } = useParams<{ id: string }>();
   const productId = Number(id);
   const isEditMode = Number.isFinite(productId) && productId > 0;
-  const { data: product, isLoading: isLoadingProduct } = useProduct(productId, {
+  const selectedStoreId = useDevModeStore((state) => state.selectedStoreId);
+  const { data: product, isLoading: isLoadingProduct } = useProduct(productId, selectedStoreId, {
     enabled: isEditMode,
   });
   const isManager = useDevModeStore((state) => state.isManager);
@@ -329,6 +333,7 @@ export default function ProductEditorPage() {
         key={formKey}
         isEditMode={isEditMode}
         productId={productId}
+        storeId={selectedStoreId}
         defaultValues={formDefaults}
         isManager={isManager}
       />

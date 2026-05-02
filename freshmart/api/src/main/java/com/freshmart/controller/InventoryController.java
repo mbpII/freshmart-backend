@@ -38,21 +38,21 @@ public class InventoryController {
     @PostMapping
     @Operation(summary = "Add a product to store inventory")
     public ResponseEntity<InventoryResponse> addToInventory(
-            @PathVariable @Positive Long storeId,
+            @PathVariable Long storeId,
             @Valid @RequestBody InventoryRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.addToInventory(storeId, request));
     }
     
     @GetMapping
     @Operation(summary = "Get all inventory items for a store")
-    public ResponseEntity<List<ProductInventoryResponse>> getStoreInventory(@PathVariable @Positive Long storeId) {
+    public ResponseEntity<List<ProductInventoryResponse>> getStoreInventory(@PathVariable Long storeId) {
         return ResponseEntity.ok(inventoryService.getInventoryByStore(storeId));
     }
     
     @GetMapping("/{productId}")
     @Operation(summary = "Get a specific product's inventory in a store")
     public ResponseEntity<ProductInventoryResponse> getProductInventory(
-            @PathVariable @Positive Long storeId,
+            @PathVariable Long storeId,
             @PathVariable @Positive Long productId) {
         return ResponseEntity.ok(inventoryService.getProductInventory(productId, storeId));
     }
@@ -60,7 +60,7 @@ public class InventoryController {
     @DeleteMapping("/{productId}")
     @Operation(summary = "Archive (soft delete) product from store inventory")
     public ResponseEntity<Void> archiveFromInventory(
-            @PathVariable @Positive Long storeId,
+            @PathVariable Long storeId,
             @PathVariable @Positive Long productId) {
         inventoryService.archiveFromStore(productId, storeId);
         return ResponseEntity.noContent().build();
@@ -69,7 +69,7 @@ public class InventoryController {
     @PostMapping("/{productId}/receive")
     @Operation(summary = "Receive stock (increase quantity)")
     public ResponseEntity<ProductInventoryResponse> receiveStock(
-            @PathVariable @Positive Long storeId,
+            @PathVariable Long storeId,
             @PathVariable @Positive Long productId,
             @Valid @RequestBody QuantityAdjustmentRequest request) {
         return quantityResponse(() -> inventoryService.receiveStock(
@@ -79,7 +79,7 @@ public class InventoryController {
     @PostMapping("/{productId}/sell")
     @Operation(summary = "Sell stock (decrease quantity)")
     public ResponseEntity<ProductInventoryResponse> sellStock(
-            @PathVariable @Positive Long storeId,
+            @PathVariable Long storeId,
             @PathVariable @Positive Long productId,
             @Valid @RequestBody QuantityAdjustmentRequest request) {
         return quantityResponse(() -> inventoryService.sellStock(
@@ -89,7 +89,7 @@ public class InventoryController {
     @PostMapping("/{productId}/adjust")
     @Operation(summary = "Adjust inventory (increase or decrease)")
     public ResponseEntity<ProductInventoryResponse> adjustInventory(
-            @PathVariable @Positive Long storeId,
+            @PathVariable Long storeId,
             @PathVariable @Positive Long productId,
             @Valid @RequestBody QuantityAdjustmentRequest request) {
         return quantityResponse(() -> inventoryService.adjustQuantity(

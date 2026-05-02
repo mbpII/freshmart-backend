@@ -32,6 +32,17 @@ export type Product = ProductCatalog & {
   inventoryId?: number;
 };
 
+export type Store = {
+  storeId: number;
+  storeName: string;
+  street?: string;
+  city: string;
+  state: string;
+  zipCode?: string;
+  phone?: string;
+  active: boolean;
+};
+
 export type CreateProductInput = {
   productName: string;
   category: string;

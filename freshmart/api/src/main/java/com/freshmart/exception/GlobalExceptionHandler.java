@@ -30,6 +30,16 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, "Store Not Found", ex.getMessage());
     }
 
+    @ExceptionHandler(StoreContextException.class)
+    public ResponseEntity<StoreContextErrorResponse> handleStoreContextException(StoreContextException ex) {
+        StoreContextErrorResponse body = new StoreContextErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            "Bad Request",
+            ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
     @ExceptionHandler(SupplierNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleSupplierNotFoundException(SupplierNotFoundException ex) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, "Supplier Not Found", ex.getMessage());
@@ -96,5 +106,11 @@ public class GlobalExceptionHandler {
         String error,
         String message,
         LocalDateTime timestamp
+    ) {}
+
+    public record StoreContextErrorResponse(
+        int status,
+        String error,
+        String message
     ) {}
 }

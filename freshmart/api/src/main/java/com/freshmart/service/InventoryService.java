@@ -6,7 +6,7 @@ import com.freshmart.dto.ProductInventoryResponse;
 import com.freshmart.event.InventoryAdjustedEvent;
 import com.freshmart.exception.InventoryNotFoundException;
 import com.freshmart.exception.ProductNotFoundException;
-import com.freshmart.exception.StoreNotFoundException;
+import com.freshmart.exception.StoreContextException;
 import com.freshmart.mapper.InventoryMapper;
 import com.freshmart.mapper.ProductInventoryMapper;
 import com.freshmart.model.Inventory;
@@ -67,7 +67,7 @@ public class InventoryService {
     
     @Transactional
     public InventoryResponse addToInventory(Long storeId, InventoryRequest request) {
-        Store store = findStoreByIdOrThrow(storeId);
+        Store store = validateStoreContext(storeId);
         
         Product product = findProductByIdOrThrow(request.productId());
         
@@ -101,6 +101,7 @@ public class InventoryService {
     
     @Transactional(readOnly = true)
     public List<ProductInventoryResponse> getInventoryByStore(Long storeId) {
+        validateStoreContext(storeId);
         return inventoryRepository.findActiveInventoryByStoreIdWithProduct(storeId).stream()
             .map(this::toProductInventoryResponse)
             .toList();
@@ -108,12 +109,14 @@ public class InventoryService {
     
     @Transactional(readOnly = true)
     public ProductInventoryResponse getProductInventory(Long productId, Long storeId) {
+        validateStoreContext(storeId);
         return toProductInventoryResponse(findActiveInventoryOrThrow(productId, storeId));
     }
     
     @Transactional
     // Soft archive only: marks the store inventory record inactive without deleting the product globally.
     public void archiveFromStore(Long productId, Long storeId) {
+        validateStoreContext(storeId);
         Inventory inventory = findActiveInventoryOrThrow(productId, storeId);
         inventory.setActive(false);
         inventoryRepository.save(inventory);
@@ -142,6 +145,7 @@ public class InventoryService {
                                                    Integer quantityChange,
                                                    String notes,
                                                    TransactionType transactionType) {
+        validateStoreContext(storeId);
         Inventory inventory = findActiveInventoryOrThrow(productId, storeId);
         
         int newQuantity = inventory.getQuantityOnHand() + quantityChange;
@@ -183,6 +187,7 @@ public class InventoryService {
     private ProductInventoryResponse applyModifier(Long productId, Long storeId,
                                                     BigDecimal inputValue,
                                                     SalePricingStrategy strategy) {
+        validateStoreContext(storeId);
         Inventory inventory = findActiveInventoryOrThrow(productId, storeId);
         BigDecimal modifier = pricingService.computeModifier(strategy, inventory.getProduct().getRetailPrice(), inputValue);
         inventory.setIsOnSale(true);
@@ -192,6 +197,7 @@ public class InventoryService {
 
     @Transactional
     public ProductInventoryResponse removeSale(Long productId, Long storeId) {
+        validateStoreContext(storeId);
         Inventory inventory = findActiveInventoryOrThrow(productId, storeId);
 
         inventory.setIsOnSale(false);
@@ -201,15 +207,23 @@ public class InventoryService {
         return toProductInventoryResponse(saved);
     }
 
+    @Transactional(readOnly = true)
+    public Store validateStoreContext(Long storeId) {
+        if (storeId == null) {
+            throw StoreContextException.missing();
+        }
+        if (storeId <= 0) {
+            throw StoreContextException.invalid();
+        }
+        return storeRepository.findById(storeId)
+            .filter(Store::isActive)
+            .orElseThrow(StoreContextException::invalid);
+    }
+
     private Inventory findActiveInventoryOrThrow(Long productId, Long storeId) {
         return inventoryRepository.findByProductProductIdAndStoreStoreIdAndIsActiveTrue(productId, storeId)
             .orElseThrow(() -> new InventoryNotFoundException(
                 "Product " + productId + " not found in store " + storeId + " inventory"));
-    }
-
-    private Store findStoreByIdOrThrow(Long storeId) {
-        return storeRepository.findById(storeId)
-            .orElseThrow(() -> new StoreNotFoundException("Store not found with id: " + storeId));
     }
 
     private Product findProductByIdOrThrow(Long productId) {

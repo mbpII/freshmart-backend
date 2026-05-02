@@ -5,7 +5,6 @@ import type {
   ProductCatalog,
   UpdateProductInput,
 } from '../types/product';
-import { DEFAULT_STORE_ID } from '../lib/constants';
 
 const API_BASE = '/api';
 
@@ -126,14 +125,14 @@ function jsonRequest(method: 'POST' | 'PUT', body: unknown): RequestInit {
 }
 
 export const productApi = {
-  getAll: async (storeId: number = DEFAULT_STORE_ID): Promise<Product[]> => {
-    const data = await requestJson(withStoreId('/products', storeId));
+  getAll: async (storeId: number): Promise<Product[]> => {
+    const data = await requestJson(`/stores/${storeId}/inventory`);
     return parseWithSchema(z.array(productSchema), data, 'products list');
   },
 
   getById: async (
     id: number,
-    storeId: number = DEFAULT_STORE_ID,
+    storeId: number,
   ): Promise<Product> => {
     const data = await requestJson(`/stores/${storeId}/inventory/${id}`);
     return parseWithSchema(productSchema, data, 'product detail');
@@ -152,14 +151,14 @@ export const productApi = {
     return parseWithSchema(productCatalogSchema, responseData, 'update product');
   },
 
-  archive: async (id: number): Promise<void> => {
-    await requestNoContent(`/products/${id}`, { method: 'DELETE' });
+  archive: async (id: number, storeId: number): Promise<void> => {
+    await requestNoContent(`/stores/${storeId}/inventory/${id}`, { method: 'DELETE' });
   },
 
   markOnSaleByPercent: async (
     id: number,
     percentOff: number,
-    storeId: number = DEFAULT_STORE_ID,
+    storeId: number,
   ): Promise<Product> => {
     const data = await requestJson(
       `/products/${id}/sale/percent?storeId=${storeId}&value=${percentOff}`,
@@ -171,7 +170,7 @@ export const productApi = {
   markOnSaleByFlat: async (
     id: number,
     flatPrice: number,
-    storeId: number = DEFAULT_STORE_ID,
+    storeId: number,
   ): Promise<Product> => {
     const data = await requestJson(
       `/products/${id}/sale/flat?storeId=${storeId}&value=${flatPrice}`,
@@ -182,7 +181,7 @@ export const productApi = {
 
   removeSale: async (
     id: number,
-    storeId: number = DEFAULT_STORE_ID,
+    storeId: number,
   ): Promise<Product> => {
     const data = await requestJson(withStoreId(`/products/${id}/sale`, storeId), {
       method: 'DELETE',
@@ -194,7 +193,7 @@ export const productApi = {
     id: number,
     quantityChange: number,
     notes: string,
-    storeId: number = DEFAULT_STORE_ID,
+    storeId: number,
   ): Promise<Product> => {
     const data = await requestJson(
       `/stores/${storeId}/inventory/${id}/receive`,
@@ -207,7 +206,7 @@ export const productApi = {
     id: number,
     quantityChange: number,
     notes: string,
-    storeId: number = DEFAULT_STORE_ID,
+    storeId: number,
   ): Promise<Product> => {
     const data = await requestJson(
       `/stores/${storeId}/inventory/${id}/adjust`,

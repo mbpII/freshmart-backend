@@ -52,8 +52,9 @@ export default function ProductPage() {
   const productId = Number(id);
   const isValidProductId = Number.isFinite(productId) && productId > 0;
   const isManager = useDevModeStore((state) => state.isManager);
+  const selectedStoreId = useDevModeStore((state) => state.selectedStoreId);
 
-  const { data: product, isLoading } = useProduct(productId, {
+  const { data: product, isLoading } = useProduct(productId, selectedStoreId, {
     enabled: isValidProductId,
   });
   const archiveProduct = useArchiveProduct();
@@ -93,7 +94,7 @@ export default function ProductPage() {
     "";
 
   const handleArchive = () => {
-    archiveProduct.mutate(productId, {
+    archiveProduct.mutate({ productId, storeId: selectedStoreId }, {
       onSuccess: () => {
         toast.success("Product archived");
         navigate("/");
@@ -123,6 +124,7 @@ export default function ProductPage() {
 
     const payload = {
       productId,
+      storeId: selectedStoreId,
       quantityChange: qty,
       notes: stockNotes.trim(),
     };
@@ -152,7 +154,7 @@ export default function ProductPage() {
         return;
       }
       markOnSale.mutate(
-        { productId, mode: "percent", value: pct },
+        { productId, storeId: selectedStoreId, mode: "percent", value: pct },
         {
           onSuccess: () => {
             setSalePercentInput("");
@@ -171,7 +173,7 @@ export default function ProductPage() {
         return;
       }
       markOnSale.mutate(
-        { productId, mode: "flat", value: sp },
+        { productId, storeId: selectedStoreId, mode: "flat", value: sp },
         {
           onSuccess: () => {
             setSalePriceInput("");
@@ -184,7 +186,7 @@ export default function ProductPage() {
 
   const handleRemoveSale = () => {
     setSaleError("");
-    removeSale.mutate(productId, {
+    removeSale.mutate({ productId, storeId: selectedStoreId }, {
       onSuccess: () => toast.success("Sale removed"),
     });
   };

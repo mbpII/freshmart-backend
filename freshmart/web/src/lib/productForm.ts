@@ -1,7 +1,6 @@
 import type { CreateProductInput, Product, ProductFormData, UpdateProductInput } from '../types/product';
-import { DEFAULT_STORE_ID } from './constants';
 
-export function buildCreateProductInput(formData: ProductFormData): CreateProductInput {
+export function buildCreateProductInput(formData: ProductFormData, storeId: number): CreateProductInput {
   return {
     productName: formData.productName.trim(),
     category: formData.category,
@@ -9,7 +8,7 @@ export function buildCreateProductInput(formData: ProductFormData): CreateProduc
     retailPrice: formData.retailPrice,
     isFood: formData.productType === 'food',
     initialQuantity: formData.quantityOnHand,
-    storeId: DEFAULT_STORE_ID,
+    storeId,
     reorderThreshold: formData.productType === 'food' ? formData.reorderThreshold ?? 0 : 0,
     reorderQuantity: formData.reorderQuantity ?? 0,
     expirationDate: formData.productType === 'food' ? formData.expirationDate || undefined : undefined,

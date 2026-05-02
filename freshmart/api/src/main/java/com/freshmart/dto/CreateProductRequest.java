@@ -39,7 +39,6 @@ public record CreateProductRequest(
     @Min(value = 0, message = "Initial quantity must be non-negative")
     Integer initialQuantity,
 
-    @Positive(message = "Store ID must be positive")
     Long storeId
 ) {
 

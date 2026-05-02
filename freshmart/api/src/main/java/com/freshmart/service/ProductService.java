@@ -39,6 +39,7 @@ public class ProductService {
 
     @Transactional
     public ProductInventoryResponse createProductWithInitialInventory(CreateProductRequest request, Long storeId) {
+        inventoryService.validateStoreContext(storeId);
         var productResponse = createProduct(productMapper.toProductRequest(request));
         var initialQty = request.initialQuantity() != null ? request.initialQuantity() : 0;
 
