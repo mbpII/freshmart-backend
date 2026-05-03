@@ -1,11 +1,4 @@
-export type Unit = 'each' | 'lb' | 'oz' | 'kg' | 'g' | 'l' | 'ml';
-
 export type ProductType = 'food' | 'non-food';
-
-export type SaleInput =
-  | { mode: 'price'; value: string }
-  | { mode: 'discount'; value: string }
-  | { mode: 'none' };
 
 export type ProductCatalog = {
   productId: number;
@@ -83,8 +76,6 @@ export type ProductFormData = Pick<
   saleMode: 'price' | 'percent';
   saleValue: string;
 };
-
-export type ProductFormErrors = Partial<Record<keyof ProductFormData | 'sale', string>>;
 
 export type ProductFormConfig = {
   categories: string[];
