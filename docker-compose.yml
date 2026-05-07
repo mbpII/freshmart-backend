@@ -37,17 +37,6 @@ services:
     networks:
       - freshmart-network
 
-  # Optional: Adminer for database management
-  adminer:
-    image: adminer:latest
-    container_name: freshmart-adminer
-    ports:
-      - "8081:8080"
-    depends_on:
-      - postgres
-    networks:
-      - freshmart-network
-
 volumes:
   postgres_data:
 

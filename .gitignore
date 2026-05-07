@@ -1,9 +1,32 @@
+# Build outputs and dependencies
 target/
 dist/
 node_modules/
+coverage/
+.generated/
+
+# Logs/runtime
 logs/
 *.log
 *.pid
+
+# Environment/local config
+.env
+.env.local
+.env.*.local
+*.local
+
+# OS/editor
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Office lock/temp files
 ~$*
+
+# Local notes/artifacts
+freshmart/docs/polish-notes.md
 *.txt
