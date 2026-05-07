@@ -68,34 +68,24 @@ public class InventoryService {
     @Transactional
     public InventoryResponse addToInventory(Long storeId, InventoryRequest request) {
         Store store = validateStoreContext(storeId);
-        
         Product product = findProductByIdOrThrow(request.productId());
-        
+
         if (inventoryRepository.existsByProductProductIdAndStoreStoreId(request.productId(), storeId)) {
             throw new IllegalArgumentException(PRODUCT_ALREADY_IN_STORE);
         }
-        
+
         Inventory inventory = new Inventory();
         inventory.setProduct(product);
         inventory.setStore(store);
         inventory.setQuantityOnHand(request.initialQuantity());
-        inventory.setActive(true);
-        inventory.setIsOnSale(false);
-        inventory.setSalesPriceModifier(null);
-        
+
         Inventory saved = inventoryRepository.save(inventory);
-        
+
         if (request.initialQuantity() > 0) {
-            InventoryAdjustedEvent event = InventoryAdjustedEvent.received(
-                product.getProductId(),
-                storeId,
-                currentUserService.getCurrentUserId(),
-                request.initialQuantity(),
-                "Initial inventory setup"
-            );
-            eventPublisher.publishEvent(event);
+            publishAdjustment(product.getProductId(), storeId, request.initialQuantity(),
+                TransactionType.RECEIVE, "Initial inventory setup");
         }
-        
+
         return inventoryMapper.toResponse(saved);
     }
     
@@ -114,11 +104,22 @@ public class InventoryService {
     }
     
     @Transactional
-    // Soft archive only: marks the store inventory record inactive without deleting the product globally.
     public void archiveFromStore(Long productId, Long storeId) {
         validateStoreContext(storeId);
         Inventory inventory = findActiveInventoryOrThrow(productId, storeId);
         inventory.setActive(false);
+        inventoryRepository.save(inventory);
+    }
+
+    @Transactional
+    public void restoreArchive(Long productId, Long storeId) {
+        validateStoreContext(storeId);
+        
+        Inventory inventory = inventoryRepository.findByProductProductIdAndStoreStoreIdAndIsActiveFalse(productId, storeId)
+            .orElseThrow(() -> new InventoryNotFoundException(
+                "Product " + productId + " not found in store " + storeId + " inventory"));
+        
+        inventory.setActive(true);
         inventoryRepository.save(inventory);
     }
     
@@ -157,15 +158,7 @@ public class InventoryService {
         inventory.setQuantityOnHand(newQuantity);
         Inventory saved = inventoryRepository.save(inventory);
 
-        InventoryAdjustedEvent event = new InventoryAdjustedEvent(
-            productId,
-            storeId,
-            currentUserService.getCurrentUserId(),
-            transactionType,
-            quantityChange,
-            notes
-        );
-        eventPublisher.publishEvent(event);
+        publishAdjustment(productId, storeId, quantityChange, transactionType, notes);
         
         return toProductInventoryResponse(saved);
     }
@@ -203,8 +196,7 @@ public class InventoryService {
         inventory.setIsOnSale(false);
         inventory.setSalesPriceModifier(null);
 
-        Inventory saved = inventoryRepository.save(inventory);
-        return toProductInventoryResponse(saved);
+        return toProductInventoryResponse(inventoryRepository.save(inventory));
     }
 
     @Transactional(readOnly = true)
@@ -229,6 +221,21 @@ public class InventoryService {
     private Product findProductByIdOrThrow(Long productId) {
         return productRepository.findById(productId)
             .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
+    }
+
+    private void publishAdjustment(Long productId,
+                                   Long storeId,
+                                   Integer quantityChange,
+                                   TransactionType transactionType,
+                                   String notes) {
+        eventPublisher.publishEvent(new InventoryAdjustedEvent(
+            productId,
+            storeId,
+            currentUserService.getCurrentUserId(),
+            transactionType,
+            quantityChange,
+            notes
+        ));
     }
 
     private void validatePositiveQuantity(Integer quantity) {
