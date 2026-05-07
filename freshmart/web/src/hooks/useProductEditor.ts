@@ -10,6 +10,7 @@ import {
   buildCreateProductInput,
   buildUpdateProductInput,
 } from '../lib/productForm';
+import { toError } from '../lib/errors';
 import type { ProductFormData } from '../types/product';
 
 type UseProductEditorOptions = {
@@ -61,7 +62,10 @@ export function useProductEditor({
     if (!isManager || !isEditMode) return;
     setSaleError(null);
     removeSale.mutate({ productId, storeId }, {
-      onError: (err) => setSaleError(err as Error),
+      onError: (err) =>
+        setSaleError(
+          toError(err, `Unable to remove sale for product ${productId} in store ${storeId}.`),
+        ),
     });
   };
 
@@ -76,7 +80,9 @@ export function useProductEditor({
             try {
               await applyMarkOnSale(productId, values);
             } catch (err) {
-              setSaleError(err as Error);
+              setSaleError(
+                toError(err, `Unable to apply sale for product ${productId} in store ${storeId}.`),
+              );
               return;
             }
             if (onEditSuccess) {
@@ -95,7 +101,12 @@ export function useProductEditor({
         try {
           await applyMarkOnSale(created.productId, values);
         } catch (err) {
-          setSaleError(err as Error);
+          setSaleError(
+            toError(
+              err,
+              `Product was created, but the sale could not be applied in store ${storeId}.`,
+            ),
+          );
           return;
         }
         navigate('/');

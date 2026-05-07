@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { buildHttpErrorMessage } from '@/lib/errors';
 import type { Store } from '@/types/product';
 
 const API_BASE = '/api';
@@ -30,12 +31,32 @@ function parseWithSchema<T>(schema: z.ZodType<T>, data: unknown, context: string
   return parsed.data;
 }
 
+function parseApiError(rawError: string): string {
+  if (!rawError.trim()) return '';
+
+  try {
+    const parsed = JSON.parse(rawError) as { message?: string; error?: string };
+    return parsed.message ?? parsed.error ?? rawError;
+  } catch {
+    return rawError;
+  }
+}
+
 export const storeApi = {
   getAll: async (): Promise<Store[]> => {
-    const response = await fetch(`${API_BASE}/stores`);
+    const path = '/stores';
+    const response = await fetch(`${API_BASE}${path}`);
 
     if (!response.ok) {
-      throw new Error(`Unable to load stores: HTTP ${response.status}`);
+      const rawError = await response.text();
+      throw new Error(
+        buildHttpErrorMessage({
+          action: 'Store list load',
+          path,
+          status: response.status,
+          detail: parseApiError(rawError),
+        }),
+      );
     }
 
     const data = await response.json();

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { storeApi } from '@/api/stores';
 import { INITIAL_STORE_ID } from '@/lib/constants';
+import { getErrorMessage } from '@/lib/errors';
 import type { Store } from '@/types/product';
 
 type DevModeState = {
@@ -39,7 +40,10 @@ export const useDevModeStore = create<DevModeState>()(
         } catch (error) {
           set({
             storesLoading: false,
-            storesError: error instanceof Error ? error.message : 'Unable to load stores',
+            storesError: getErrorMessage(
+              error,
+              'Store list load failed: request to /api/stores did not return a usable response.',
+            ),
           });
         }
       },
