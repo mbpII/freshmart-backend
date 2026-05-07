@@ -11,8 +11,6 @@ public record ProductResponse(
     String supplierName,
     BigDecimal unitCost,
     BigDecimal retailPrice,
-    Boolean isOnSale,
-    BigDecimal salePrice,
     Boolean isFood,
     Integer reorderThreshold,
     Integer reorderQuantity,

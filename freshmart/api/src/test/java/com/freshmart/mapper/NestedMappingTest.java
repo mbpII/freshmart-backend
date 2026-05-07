@@ -33,7 +33,6 @@ class NestedMappingTest {
         product.setSupplier(supplier);
         product.setUnitCost(new BigDecimal("1.25"));
         product.setRetailPrice(new BigDecimal("2.49"));
-        product.setIsOnSale(false);
         product.setIsFood(true);
         product.setReorderThreshold(5);
         product.setReorderQuantity(20);

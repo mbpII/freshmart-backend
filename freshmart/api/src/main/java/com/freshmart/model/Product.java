@@ -45,13 +45,6 @@ public class Product {
     @Column(name = "retail_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal retailPrice;
     
-    @Column(name = "is_on_sale")
-    private Boolean isOnSale = false;
-    
-    @DecimalMin(value = "0.00", message = "Sale price must be non-negative")
-    @Column(name = "sale_price", precision = 10, scale = 2)
-    private BigDecimal salePrice;
-    
     @Column(name = "expiration_date")
     private LocalDate expirationDate;
     
@@ -89,12 +82,6 @@ public class Product {
     
     public BigDecimal getRetailPrice() { return retailPrice; }
     public void setRetailPrice(BigDecimal retailPrice) { this.retailPrice = retailPrice; }
-    
-    public Boolean getIsOnSale() { return isOnSale; }
-    public void setIsOnSale(Boolean isOnSale) { this.isOnSale = isOnSale; }
-    
-    public BigDecimal getSalePrice() { return salePrice; }
-    public void setSalePrice(BigDecimal salePrice) { this.salePrice = salePrice; }
     
     public LocalDate getExpirationDate() { return expirationDate; }
     public void setExpirationDate(LocalDate expirationDate) { this.expirationDate = expirationDate; }

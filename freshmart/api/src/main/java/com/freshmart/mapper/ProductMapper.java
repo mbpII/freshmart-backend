@@ -29,14 +29,10 @@ public interface ProductMapper {
 
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "isActive", constant = "true")
-    @Mapping(target = "isOnSale", constant = "false")
-    @Mapping(target = "salePrice", ignore = true)
     @Mapping(target = "supplier", ignore = true)
     Product toEntity(ProductRequest request);
 
     @Mapping(source = "supplier.supplierName", target = "supplierName")
-    @Mapping(source = "isOnSale", target = "isOnSale")
-    @Mapping(source = "salePrice", target = "salePrice")
     @Mapping(source = "isFood", target = "isFood")
     @Mapping(source = "isActive", target = "isActive")
     ProductResponse toResponse(Product product);
@@ -44,7 +40,5 @@ public interface ProductMapper {
     @Mapping(target = "productId", ignore = true)
     @Mapping(target = "supplier", ignore = true)
     @Mapping(target = "isActive", ignore = true)
-    @Mapping(target = "isOnSale", ignore = true)
-    @Mapping(target = "salePrice", ignore = true)
     void updateEntity(ProductRequest request, @MappingTarget Product product);
 }

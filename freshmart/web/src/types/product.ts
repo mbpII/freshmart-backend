@@ -8,9 +8,6 @@ export type ProductCatalog = {
   supplierName?: string;
   unitCost?: number;
   retailPrice: number;
-  isOnSale: boolean;
-  salesPriceModifier?: number;
-  salePrice?: number;
   isFood: boolean;
   isActive: boolean;
   expirationDate?: string;
@@ -20,6 +17,9 @@ export type ProductCatalog = {
 
 export type Product = ProductCatalog & {
   storeId: number;
+  isOnSale: boolean;
+  salesPriceModifier?: number;
+  salePrice?: number;
   quantityOnHand: number;
   lastUpdated: string;
   inventoryId?: number;
