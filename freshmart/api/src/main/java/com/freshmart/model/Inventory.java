@@ -42,10 +42,6 @@ public class Inventory {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    @NotNull
-    @Column(name = "is_on_sale", nullable = false)
-    private Boolean isOnSale = false;
-
     @DecimalMin(value = "0.00", message = "Sale percent off must be non-negative")
     @DecimalMax(value = "100.00", message = "Sale percent off must be at most 100")
     @Column(name = "sales_price_modifier", precision = 5, scale = 2)
@@ -69,9 +65,6 @@ public class Inventory {
     public boolean isActive() { return isActive != null && isActive; }
     public void setActive(boolean isActive) { this.isActive = isActive; }
 
-    public Boolean getIsOnSale() { return isOnSale; }
-    public void setIsOnSale(Boolean isOnSale) { this.isOnSale = isOnSale; }
-
     public BigDecimal getSalesPriceModifier() { return salesPriceModifier; }
     public void setSalesPriceModifier(BigDecimal salesPriceModifier) { this.salesPriceModifier = salesPriceModifier; }
     
@@ -92,7 +85,7 @@ public class Inventory {
         return "Inventory{" +
                 "inventoryId=" + inventoryId +
                 ", quantityOnHand=" + quantityOnHand +
-                ", isOnSale=" + isOnSale +
+                ", salesPriceModifier=" + salesPriceModifier +
                 ", isActive=" + isActive +
                 '}';
     }

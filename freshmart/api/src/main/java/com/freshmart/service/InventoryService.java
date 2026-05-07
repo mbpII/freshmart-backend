@@ -183,7 +183,6 @@ public class InventoryService {
         validateStoreContext(storeId);
         Inventory inventory = findActiveInventoryOrThrow(productId, storeId);
         BigDecimal modifier = pricingService.computeModifier(strategy, inventory.getProduct().getRetailPrice(), inputValue);
-        inventory.setIsOnSale(true);
         inventory.setSalesPriceModifier(modifier);
         return toProductInventoryResponse(inventoryRepository.save(inventory));
     }
@@ -193,7 +192,6 @@ public class InventoryService {
         validateStoreContext(storeId);
         Inventory inventory = findActiveInventoryOrThrow(productId, storeId);
 
-        inventory.setIsOnSale(false);
         inventory.setSalesPriceModifier(null);
 
         return toProductInventoryResponse(inventoryRepository.save(inventory));
@@ -262,9 +260,9 @@ public class InventoryService {
         ProductInventoryResponse base = productInventoryMapper.toResponse(inventory);
         BigDecimal salePrice = pricingService.calculateSalePrice(
             base.retailPrice(),
-            base.salesPriceModifier(),
-            base.isOnSale()
+            base.salesPriceModifier()
         );
+        boolean isOnSale = salePrice != null;
 
         return new ProductInventoryResponse(
             base.productId(),
@@ -275,7 +273,7 @@ public class InventoryService {
             base.supplierName(),
             base.unitCost(),
             base.retailPrice(),
-            base.isOnSale(),
+            isOnSale,
             base.salesPriceModifier(),
             salePrice,
             base.quantityOnHand(),

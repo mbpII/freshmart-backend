@@ -14,7 +14,7 @@ public interface ProductInventoryMapper {
     @Mapping(source = "product.upc", target = "upc")
     @Mapping(source = "product.unitCost", target = "unitCost")
     @Mapping(source = "product.retailPrice", target = "retailPrice")
-    @Mapping(source = "isOnSale", target = "isOnSale")
+    @Mapping(target = "isOnSale", ignore = true)
     @Mapping(source = "salesPriceModifier", target = "salesPriceModifier")
     @Mapping(target = "salePrice", ignore = true)
     @Mapping(source = "product.isFood", target = "isFood")

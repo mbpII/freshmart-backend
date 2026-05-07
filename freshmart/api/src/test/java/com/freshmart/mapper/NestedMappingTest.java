@@ -74,7 +74,6 @@ class NestedMappingTest {
         inventory.setStore(store);
         inventory.setQuantityOnHand(42);
         inventory.setLastUpdated(LocalDateTime.of(2026, 4, 14, 9, 30));
-        inventory.setIsOnSale(true);
         inventory.setSalesPriceModifier(new BigDecimal("10.00"));
 
         ProductInventoryResponse response = productInventoryMapper.toResponse(inventory);

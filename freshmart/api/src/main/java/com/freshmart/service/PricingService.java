@@ -19,8 +19,8 @@ public class PricingService {
         return strategy.computeModifier(retailPrice, inputValue);
     }
 
-    public BigDecimal calculateSalePrice(BigDecimal retailPrice, BigDecimal salesPriceModifier, Boolean isOnSale) {
-        if (!Boolean.TRUE.equals(isOnSale) || salesPriceModifier == null) {
+    public BigDecimal calculateSalePrice(BigDecimal retailPrice, BigDecimal salesPriceModifier) {
+        if (!hasActiveModifier(salesPriceModifier)) {
             return null;
         }
 
@@ -38,5 +38,11 @@ public class PricingService {
         }
 
         return computed;
+    }
+
+    private boolean hasActiveModifier(BigDecimal salesPriceModifier) {
+        return salesPriceModifier != null
+            && salesPriceModifier.compareTo(BigDecimal.ZERO) > 0
+            && salesPriceModifier.compareTo(HUNDRED) < 0;
     }
 }
