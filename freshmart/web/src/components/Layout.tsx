@@ -1,6 +1,6 @@
 import { Link, Outlet } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
-import { Plus } from 'lucide-react';
+import { CircleAlert, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDevModeStore } from '@/stores/dev-mode';
 import { useEffect } from 'react';
@@ -19,6 +19,7 @@ export default function Layout() {
   const setSelectedStoreId = useDevModeStore((state) => state.setSelectedStoreId);
   const stores = useDevModeStore((state) => state.stores);
   const storesLoading = useDevModeStore((state) => state.storesLoading);
+  const storesError = useDevModeStore((state) => state.storesError);
   const loadStores = useDevModeStore((state) => state.loadStores);
 
   useEffect(() => {
@@ -33,25 +34,36 @@ export default function Layout() {
         </Link>
         <div className="flex items-center gap-2">
           {isManager && (
-            <Select
-              value={String(selectedStoreId)}
-              onValueChange={(value: string | null) => {
-                const nextStoreId = Number(value);
-                if (Number.isFinite(nextStoreId)) setSelectedStoreId(nextStoreId);
-              }}
-              disabled={storesLoading}
-            >
-              <SelectTrigger className="h-8 w-[220px] rounded-md text-xs">
-                <SelectValue placeholder="Select store" />
-              </SelectTrigger>
-              <SelectContent>
-                {stores.map((store) => (
-                  <SelectItem key={store.storeId} value={String(store.storeId)}>
-                    {store.storeId} {store.storeName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(selectedStoreId)}
+                onValueChange={(value: string | null) => {
+                  const nextStoreId = Number(value);
+                  if (Number.isFinite(nextStoreId)) setSelectedStoreId(nextStoreId);
+                }}
+                disabled={storesLoading}
+              >
+                <SelectTrigger className="h-8 w-[220px] rounded-md text-xs">
+                  <SelectValue placeholder="Select store" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.map((store) => (
+                    <SelectItem key={store.storeId} value={String(store.storeId)}>
+                      {store.storeId} {store.storeName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {storesError && (
+                <p
+                  className="flex max-w-[260px] items-center gap-1.5 truncate text-xs font-medium text-destructive"
+                  title={storesError}
+                >
+                  <CircleAlert className="size-3.5 shrink-0" />
+                  <span className="truncate">{storesError}</span>
+                </p>
+              )}
+            </div>
           )}
           <button
             type="button"
