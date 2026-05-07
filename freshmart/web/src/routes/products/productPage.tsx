@@ -5,7 +5,6 @@ import {
   useArchiveProduct,
   useMarkOnSale,
   useProduct,
-  useReceiveStock,
   useRemoveSale,
 } from "@/hooks/useProducts";
 import {
@@ -43,7 +42,6 @@ import { toast } from "sonner";
 import { ArrowLeft, PackageX, Pencil } from "lucide-react";
 import { useDevModeStore } from "@/stores/dev-mode";
 
-type StockAction = "receive" | "adjust";
 const SHOW_EPIC01_PLACEHOLDER_PANELS = false;
 
 export default function ProductPage() {
@@ -60,10 +58,8 @@ export default function ProductPage() {
   const archiveProduct = useArchiveProduct();
   const markOnSale = useMarkOnSale();
   const removeSale = useRemoveSale();
-  const receiveStock = useReceiveStock();
   const adjustStock = useAdjustStock();
 
-  const [stockAction, setStockAction] = useState<StockAction>("receive");
   const [stockQuantity, setStockQuantity] = useState("");
   const [stockNotes, setStockNotes] = useState("");
   const [stockError, setStockError] = useState("");
@@ -80,13 +76,10 @@ export default function ProductPage() {
   if (isLoading) return <main className="p-4" aria-busy="true" aria-live="polite">Loading...</main>;
   if (!product) return <main className="p-4" aria-live="polite">Product not found</main>;
 
-  const stockPending = receiveStock.isPending || adjustStock.isPending;
+  const stockPending = adjustStock.isPending;
   const salePending = markOnSale.isPending || removeSale.isPending;
 
-  const stockMutationError =
-    (receiveStock.error as Error | null)?.message ||
-    (adjustStock.error as Error | null)?.message ||
-    "";
+  const stockMutationError = (adjustStock.error as Error | null)?.message || "";
 
   const saleMutationError =
     (markOnSale.error as Error | null)?.message ||
@@ -113,11 +106,7 @@ export default function ProductPage() {
       setStockError("Notes are required.");
       return;
     }
-    if (stockAction === "receive" && qty <= 0) {
-      setStockError("Quantity must be greater than 0.");
-      return;
-    }
-    if (stockAction === "adjust" && qty === 0) {
+    if (qty === 0) {
       setStockError("Adjustment cannot be 0.");
       return;
     }
@@ -134,14 +123,7 @@ export default function ProductPage() {
       toast.success("Stock updated");
     };
 
-    switch (stockAction) {
-      case "receive":
-        receiveStock.mutate(payload, { onSuccess });
-        break;
-      case "adjust":
-        adjustStock.mutate(payload, { onSuccess });
-        break;
-    }
+    adjustStock.mutate(payload, { onSuccess });
   };
 
   const handleApplySale = () => {
@@ -202,7 +184,7 @@ export default function ProductPage() {
   const saleErrorId = "sale-error";
 
   return (
-    <main className="p-4 space-y-4">
+    <main className="mx-auto max-w-5xl space-y-4 p-4 sm:p-6">
       <Link
         to="/"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -213,9 +195,10 @@ export default function ProductPage() {
 
       <div>
         <h1 className="text-xl font-bold">{product.productName}</h1>
-        <p className="text-sm text-muted-foreground">
-          UPC: {product.upc} &nbsp; Category: {product.category} &nbsp; Type:{" "}
-          {product.isFood ? "Food" : "Non-Food"}
+        <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+          <span>UPC: {product.upc}</span>
+          <span>Category: {product.category}</span>
+          <span>Type: {product.isFood ? "Food" : "Non-Food"}</span>
         </p>
         <div className="mt-1 flex gap-1" role="status">
           <Badge className={getProductAlertBadgeClass(alertState)}>{alertStatus}</Badge>
@@ -236,93 +219,84 @@ export default function ProductPage() {
             <h2 className="mb-2 text-base font-bold uppercase tracking-wide">
               Current Stock
             </h2>
-<Card
-               className="rounded-md bg-background ring-1 ring-foreground/30"
-               size="sm"
-             >
-               <CardContent className="space-y-3 py-2">
-                 <p className="text-base">
-                   In Stock: <strong>{product.quantityOnHand}</strong> units
-                   Status:{" "}
-                   <strong
-                     className={
-                       alertState === "low-stock"
-                         ? "text-destructive"
-                         : "text-emerald-700"
-                     }
-                   >
-                     {alertState === "low-stock" ? "LOW" : "OK"}
-                     <span className="sr-only">
-                       {alertState === "low-stock" ? ", low stock" : ", in stock"}
-                     </span>
-                   </strong>
-                 </p>
-                 <form
-                   onSubmit={(e) => { e.preventDefault(); handleStockSubmit(); }}
-                   className="grid gap-3 lg:grid-cols-[150px_140px_1fr_auto] lg:items-end"
-                 >
-                   <div>
-                     <Label htmlFor="stock-action" className="text-xs">Action</Label>
-                     <Select
-                       value={stockAction}
-                       onValueChange={(v: string | null) =>
-                         setStockAction((v ?? "receive") as StockAction)
-                       }
-                     >
-                       <SelectTrigger id="stock-action" className="rounded-md">
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="receive">+ Receive</SelectItem>
-                         <SelectItem value="adjust">Adjust</SelectItem>
-                       </SelectContent>
-                     </Select>
-                   </div>
-                   <div>
-                     <Label htmlFor="stock-qty" className="text-xs">
-                       Qty {stockAction === "adjust" ? "(+/-)" : ""}
-                     </Label>
-                     <Input
-                       id="stock-qty"
-                       className="rounded-md"
-                       type="number"
-                       step="1"
-                       value={stockQuantity}
-                       onChange={(e) => setStockQuantity(e.target.value)}
-                       disabled={stockPending}
-                       aria-invalid={!!(stockError || stockMutationError)}
-                       aria-describedby={(stockError || stockMutationError) ? stockErrorId : undefined}
-                     />
-                   </div>
-                   <div>
-                     <Label htmlFor="stock-notes" className="text-xs">Notes</Label>
-                     <Input
-                       id="stock-notes"
-                       className="rounded-md"
-                       type="text"
-                       value={stockNotes}
-                       onChange={(e) => setStockNotes(e.target.value)}
-                       disabled={stockPending}
-                       aria-invalid={!!(stockError || stockMutationError)}
-                       aria-describedby={(stockError || stockMutationError) ? stockErrorId : undefined}
-                     />
-                   </div>
-                   <Button
-                     className="rounded-md"
-                     size="default"
-                     type="submit"
-                     disabled={stockPending}
-                   >
-                     {stockPending ? "Saving..." : "Record"}
-                   </Button>
-                 </form>
-                 {(stockError || stockMutationError) && (
-                   <p id={stockErrorId} className="text-sm text-destructive" role="alert">
-                     {stockError || stockMutationError}
-                   </p>
-                 )}
-               </CardContent>
-             </Card>
+            <Card
+              className="rounded-md bg-background ring-1 ring-foreground/30"
+              size="sm"
+            >
+              <CardContent className="space-y-3 py-2">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-base">
+                  <p>
+                    In Stock: <strong>{product.quantityOnHand}</strong> units
+                  </p>
+                  <p>
+                    Status:{" "}
+                    <strong
+                      className={
+                        alertState === "low-stock"
+                          ? "text-destructive"
+                          : "text-emerald-700"
+                      }
+                    >
+                      {alertState === "low-stock" ? "LOW" : "OK"}
+                      <span className="sr-only">
+                        {alertState === "low-stock" ? ", low stock" : ", in stock"}
+                      </span>
+                    </strong>
+                  </p>
+                </div>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); handleStockSubmit(); }}
+                  className="grid gap-3 sm:grid-cols-[150px_140px] sm:items-end lg:grid-cols-[150px_140px_1fr_auto]"
+                >
+                  <div>
+                    <Label className="text-xs">Action</Label>
+                    <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-medium text-foreground">
+                      Adjustment
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="stock-qty" className="text-xs">Qty (+/-)</Label>
+                    <Input
+                      id="stock-qty"
+                      className="rounded-md"
+                      type="number"
+                      step="1"
+                      value={stockQuantity}
+                      onChange={(e) => setStockQuantity(e.target.value)}
+                      disabled={stockPending}
+                      aria-invalid={!!(stockError || stockMutationError)}
+                      aria-describedby={(stockError || stockMutationError) ? stockErrorId : undefined}
+                    />
+                  </div>
+                  <div className="sm:col-span-2 lg:col-span-1">
+                    <Label htmlFor="stock-notes" className="text-xs">Notes</Label>
+                    <Input
+                      id="stock-notes"
+                      className="rounded-md"
+                      type="text"
+                      value={stockNotes}
+                      onChange={(e) => setStockNotes(e.target.value)}
+                      disabled={stockPending}
+                      aria-invalid={!!(stockError || stockMutationError)}
+                      aria-describedby={(stockError || stockMutationError) ? stockErrorId : undefined}
+                    />
+                  </div>
+                  <Button
+                    className="rounded-md w-full sm:w-auto lg:w-auto"
+                    size="default"
+                    type="submit"
+                    disabled={stockPending}
+                  >
+                    {stockPending ? "Saving..." : "Record"}
+                  </Button>
+                </form>
+                {(stockError || stockMutationError) && (
+                  <p id={stockErrorId} className="text-sm text-destructive" role="alert">
+                    {stockError || stockMutationError}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </section>
 
           <section>
@@ -345,7 +319,7 @@ export default function ProductPage() {
               {isManager && !product.isOnSale && (
                 <form
                   onSubmit={(e) => { e.preventDefault(); handleApplySale(); }}
-                  className="grid gap-3 md:grid-cols-[170px_150px_150px_auto] md:items-end"
+                  className="grid gap-3 sm:grid-cols-[160px_1fr] sm:items-end md:grid-cols-[160px_140px_140px_auto]"
                 >
                   <div>
                     <Label htmlFor="sale-mode" className="text-xs">Input Mode</Label>
@@ -355,7 +329,7 @@ export default function ProductPage() {
                         setSaleMode((v ?? "price") as "price" | "percent")
                       }
                     >
-                      <SelectTrigger id="sale-mode" className="rounded-md">
+                      <SelectTrigger id="sale-mode" className="w-full rounded-md">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -399,7 +373,7 @@ export default function ProductPage() {
                     </div>
                   )}
                   <Button
-                    className="rounded-md"
+                    className="rounded-md w-full sm:w-auto md:w-auto"
                     variant="outline"
                     size="default"
                     type="submit"
@@ -529,7 +503,7 @@ export default function ProductPage() {
 
       <Separator />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="destructive"
           size="sm"
